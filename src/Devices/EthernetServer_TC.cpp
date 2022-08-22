@@ -69,7 +69,7 @@ void EthernetServer_TC::get() {
     fileSetup();
   } else {
     serial(F("get \"%s\" not recognized!"), buffer + 4);
-    sendBadRequestHeaders();
+    sendNotFoundHeaders();
     state = FINISHED;
   }
 }
@@ -424,6 +424,15 @@ void EthernetServer_TC::sendRedirectHeaders() {
 void EthernetServer_TC::sendBadRequestHeaders() {
   char buffer[30];
   static const char response[] PROGMEM = "HTTP/1.1 400 Bad Request\r\n\r\n";
+  strncpy_P(buffer, (PGM_P)response, sizeof(buffer));
+  client.write(buffer);
+  state = FINISHED;
+}
+
+// 404 response
+void EthernetServer_TC::sendNotFoundHeaders() {
+  char buffer[30];
+  static const char response[] PROGMEM = "HTTP/1.1 404 Not Found\r\n\r\n";
   strncpy_P(buffer, (PGM_P)response, sizeof(buffer));
   client.write(buffer);
   state = FINISHED;
