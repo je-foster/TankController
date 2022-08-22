@@ -50,6 +50,7 @@ private:
   EthernetServer_TC(uint16_t port);
   // instance methods: utility
   void sendHeadersWithSize(uint32_t size);
+  void sendFavicon();
   void sendRedirectHeaders();
   void sendBadRequestHeaders();
   void sendNotFoundHeaders();

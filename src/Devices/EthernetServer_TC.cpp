@@ -6,6 +6,7 @@
 #include "Devices/Ethernet_TC.h"
 #include "Devices/JSONBuilder.h"
 #include "Devices/LiquidCrystal_TC.h"
+#include "Favicon.h"
 #include "Serial_TC.h"
 #include "TankController.h"
 
@@ -65,6 +66,8 @@ void EthernetServer_TC::get() {
     echo();
   } else if (memcmp_P(buffer + 5, F("api"), 3) == 0) {
     apiHandler();
+  } else if (memcmp_P(buffer + 5, F("favicon.ico"), 11) == 0) {
+    sendFavicon();
   } else if (isRequestForExistingFile()) {
     fileSetup();
   } else {
@@ -405,6 +408,26 @@ void EthernetServer_TC::sendHeadersWithSize(uint32_t size) {
   client.write('\r');
   client.write('\n');
   state = FINISHED;  // TODO: Why?! This is awkward when we want to send a body next.
+}
+
+// 200 response for favicon.ico
+void EthernetServer_TC::sendFavicon() {
+  static const char response[] PROGMEM =
+      "HTTP/1.1 200 OK\r\n"
+      "Content-Type: image/vnd.microsoft.icon\r\n"
+      "Access-Control-Allow-Origin: *\r\n";
+  char buffer[sizeof(response)];
+  strncpy_P(buffer, (PGM_P)response, sizeof(buffer));
+  client.write(buffer);
+  snprintf_P(buffer, sizeof(buffer), (PGM_P)F("Content-Length: %lu\r\n"), (unsigned long)sizeof(Favicon));
+  client.write(buffer);
+
+  client.write('\r');
+  client.write('\n');
+
+  client.write(Favicon, sizeof(Favicon));
+
+  state = FINISHED;
 }
 
 // 303 response
