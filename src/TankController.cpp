@@ -58,7 +58,8 @@ TankController::TankController() {
   char buffer[50];
   buffer[0] = 'A';
   serial(F("%i"), (int)buffer[0]);
-  strncpy(buffer, (PGM_P)F("We are looking for a big problem."), sizeof(buffer));
+  // strncpy(buffer, (PGM_P)F("We are looking for a big problem."), sizeof(buffer));
+  strncpy_P(buffer, (PGM_P)F("We are looking for a big problem."), sizeof(buffer));
   serial(F("%i"), (int)buffer[0]);
   Serial.println(buffer);
   LiquidCrystal_TC::instance(TANK_CONTROLLER_VERSION);
