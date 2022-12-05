@@ -47,8 +47,8 @@ void SD_TC::appendData(const char* header, const char* line) {
 
 /**
  * @brief append data to a smaller data log file
- * 
- * @param line 
+ *
+ * @param line
  */
 void SD_TC::appendToIntermittentLog(const char* line) {
   char path[30];

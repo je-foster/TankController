@@ -18,7 +18,7 @@ DataLogger_TC* DataLogger_TC::_instance = nullptr;
 //  class methods
 /**
  * @brief accessor for singleton
- * 
+ *
  */
 DataLogger_TC* DataLogger_TC::instance() {
   if (!_instance) {
@@ -45,7 +45,7 @@ void DataLogger_TC::loop() {
 
 /**
  * @brief write the current data to the serial port
- * 
+ *
  */
 void DataLogger_TC::writeToSerial() {
   DateTime_TC dtNow = DateTime_TC::now();
@@ -56,14 +56,15 @@ void DataLogger_TC::writeToSerial() {
     strscpy_P(bufferTemperature, (PGM_P)F("C"), sizeof(bufferTemperature));
   } else {
     floattostrf((float)PHProbe::instance()->getPh(), 5, 3, bufferPh, sizeof(bufferPh));
-    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 5, 2, bufferTemperature, sizeof(bufferTemperature));
+    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 5, 2, bufferTemperature,
+                sizeof(bufferTemperature));
   }
   serial(F("%02d:%02d pH=%s temp=%s"), (uint16_t)dtNow.hour(), (uint16_t)dtNow.minute(), bufferPh, bufferTemperature);
 }
 
 /**
  * @brief write the current data to the huge log file on the SD
- * 
+ *
  */
 void DataLogger_TC::writeToSDIncessantly() {
   char currentTemperature[10];
@@ -72,11 +73,12 @@ void DataLogger_TC::writeToSDIncessantly() {
     strscpy_P(currentTemperature, (PGM_P)F("C"), sizeof(currentTemperature));
     strscpy_P(currentPh, (PGM_P)F("C"), sizeof(currentPh));
   } else {
-    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 4, 2, currentTemperature, sizeof(currentTemperature));
+    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 4, 2, currentTemperature,
+                sizeof(currentTemperature));
     floattostrf((float)PHProbe::instance()->getPh(), 5, 3, currentPh, sizeof(currentPh));
   }
   DateTime_TC dtNow = DateTime_TC::now();
-  PID_TC *pPID = PID_TC::instance();
+  PID_TC* pPID = PID_TC::instance();
   uint16_t tankId = EEPROM_TC::instance()->getTankID();
   char targetTemp[10];
   char targetPh[10];
@@ -107,7 +109,7 @@ void DataLogger_TC::writeToSDIncessantly() {
 
 /**
  * @brief write the current data to the smaller log file on the SD
- * 
+ *
  */
 void DataLogger_TC::writeToSDIntermittently() {
   char currentTemperature[10];
@@ -116,7 +118,8 @@ void DataLogger_TC::writeToSDIntermittently() {
     strscpy_P(currentTemperature, (PGM_P)F("C"), sizeof(currentTemperature));
     strscpy_P(currentPh, (PGM_P)F("C"), sizeof(currentPh));
   } else {
-    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 4, 2, currentTemperature, sizeof(currentTemperature));
+    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 4, 2, currentTemperature,
+                sizeof(currentTemperature));
     floattostrf((float)PHProbe::instance()->getPh(), 5, 3, currentPh, sizeof(currentPh));
   }
   DateTime_TC dtNow = DateTime_TC::now();
