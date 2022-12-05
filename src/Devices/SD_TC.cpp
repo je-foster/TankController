@@ -58,8 +58,8 @@ void SD_TC::appendToSparseDataLog(const char* line) {
     if (!sd.mkdir(F("sparse_data"))) {
       if (!hasHadError) {
         hasHadError = true;
-        serial(F("Unable to create directory: \"small_data\""));
-        COUT("Unable to create directory: \"small_data\"");
+        serial(F("Unable to create directory: \"sparse_data\""));
+        COUT("Unable to create directory: \"sparse_data\"");
         return;
       }
     }
