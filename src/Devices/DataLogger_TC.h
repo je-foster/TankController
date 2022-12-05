@@ -1,10 +1,10 @@
 #pragma once
 #include <Arduino.h>
 
-// Logging intervals in milliseconds
-#define INCESSANT_LOGGING_INTERVAL 1000l
-#define INTERMITTENT_LOGGING_INTERVAL 1000l * 60l * 5l
-#define SERIAL_LOGGING_INTERVAL 1000l * 60l
+// Logging intervals (1 sec, 5 min, 1 min)
+#define INCESSANT_LOGGING_INTERVAL 1000
+#define INTERMITTENT_LOGGING_INTERVAL 300000
+#define SERIAL_LOGGING_INTERVAL 60000
 
 class DataLogger_TC {
 public:
@@ -28,4 +28,4 @@ private:
   void writeToSDIncessantly();
   void writeToSDIntermittently();
   void writeToSerial();
-}
+};
