@@ -3,6 +3,7 @@
 #include <avr/wdt.h>
 #include <stdlib.h>
 
+#include "Devices/DataLogger_TC.h"
 #include "Devices/DateTime_TC.h"
 #include "Devices/EEPROM_TC.h"
 #include "Devices/EthernetServer_TC.h"
@@ -52,6 +53,7 @@ TankController::TankController() {
   EEPROM_TC::instance();
   Keypad_TC::instance();
   LiquidCrystal_TC::instance(TANK_CONTROLLER_VERSION);
+  DataLogger_TC::instance();
   DateTime_TC::rtc();
   Ethernet_TC::instance();
   TempProbe_TC::instance();
@@ -150,8 +152,7 @@ void TankController::loop() {
   blink();                                // blink the on-board LED to show that we are running
   handleUI();                             // look at keypad, update LCD
   updateControls();                       // turn CO2 and temperature controls on or off
-  writeDataToSD();                        // record current state to data log
-  writeDataToSerial();                    // record current pH and temperature to serial
+  DataLogger_TC::instance()->loop();      // record data to log files and to serial
   PushingBox::instance()->loop();         // write data to Google Sheets
   Ethernet_TC::instance()->loop();        // renew DHCP lease
   EthernetServer_TC::instance()->loop();  // handle any HTTP requests
@@ -235,73 +236,6 @@ const char *TankController::version() {
   return TANK_CONTROLLER_VERSION;
 }
 
-/**
- * once per second write the current data to the SD card
- */
-void TankController::writeDataToSD() {
-  static uint32_t nextWriteTime = 0;
-  uint32_t msNow = millis();
-  COUT("nextWriteTime: " << nextWriteTime << "; now = " << msNow);
-  if (nextWriteTime > msNow) {
-    return;
-  }
-  char currentTemp[10];
-  char currentPh[10];
-  if (isInCalibration()) {
-    snprintf_P(currentTemp, sizeof(currentTemp), (PGM_P)F("C"));
-    snprintf_P(currentPh, sizeof(currentPh), (PGM_P)F("C"));
-  } else {
-    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 4, 2, currentTemp, sizeof(currentTemp));
-    floattostrf((float)PHProbe::instance()->getPh(), 5, 3, currentPh, sizeof(currentPh));
-  }
-  DateTime_TC dtNow = DateTime_TC::now();
-  PID_TC *pPID = PID_TC::instance();
-  uint16_t tankId = EEPROM_TC::instance()->getTankID();
-  char targetTemp[10];
-  char targetPh[10];
-  char kp[12];
-  char ki[12];
-  char kd[12];
-  floattostrf(TemperatureControl::instance()->getTargetTemperature(), 4, 2, targetTemp, sizeof(targetTemp));
-  floattostrf(PHControl::instance()->getTargetPh(), 5, 3, targetPh, sizeof(targetPh));
-  floattostrf(pPID->getKp(), 8, 1, kp, sizeof(kp));
-  floattostrf(pPID->getKi(), 8, 1, ki, sizeof(ki));
-  floattostrf(pPID->getKd(), 8, 1, kd, sizeof(kd));
-  static const char header[] PROGMEM = "time,tankid,temp,temp setpoint,pH,pH setpoint,onTime,Kp,Ki,Kd";
-  static const char format[] PROGMEM = "%02i/%02i/%4i %02i:%02i:%02i, %3i, %s, %s, %s, %s, %4lu, %s, %s, %s";
-  char header_buffer[sizeof(header)];
-  strscpy_P(header_buffer, (PGM_P)header, sizeof(header_buffer));
-  char buffer[128];
-  int length;
-  length = snprintf_P(buffer, sizeof(buffer), (PGM_P)format, (uint16_t)dtNow.month(), (uint16_t)dtNow.day(),
-                      (uint16_t)dtNow.year(), (uint16_t)dtNow.hour(), (uint16_t)dtNow.minute(),
-                      (uint16_t)dtNow.second(), (uint16_t)tankId, currentTemp, targetTemp, currentPh, targetPh,
-                      (unsigned long)(millis() / 1000), kp, ki, kd);
-  if ((length > sizeof(buffer)) || (length < 0)) {
-    // TODO: Log a warning that string was truncated
-    serial(F("WARNING! String was truncated to \"%s\""), buffer);
-  }
-  SD_TC::instance()->appendData(header_buffer, buffer);
-  nextWriteTime = msNow / 1000 * 1000 + 1000;  // round up to next second
-  COUT(buffer);
-}
-
-/**
- * once per minute write the current data to the serial port
- */
-void TankController::writeDataToSerial() {
-  static uint32_t nextWriteTime = 0;
-  uint32_t msNow = millis();
-  if (nextWriteTime <= msNow) {
-    DateTime_TC dtNow = DateTime_TC::now();
-    char buffer1[12];
-    char buffer2[11];
-    floattostrf((float)PHProbe::instance()->getPh(), 5, 3, buffer1, sizeof(buffer1));
-    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 5, 2, buffer2, sizeof(buffer2));
-    serial(F("%02d:%02d pH=%s temp=%s"), (uint16_t)dtNow.hour(), (uint16_t)dtNow.minute(), buffer1, buffer2);
-    nextWriteTime = msNow / 60000 * 60000 + 60000;  // round up to next minute
-  }
-}
 #if defined(__CYGWIN__)
 size_t strnlen(const char *s, size_t n) {
   void *found = memchr(s, '\0', n);

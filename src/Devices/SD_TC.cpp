@@ -46,6 +46,29 @@ void SD_TC::appendData(const char* header, const char* line) {
 }
 
 /**
+ * @brief append data to a smaller data log file
+ * 
+ * @param line 
+ */
+void SD_TC::appendToIntermittentLog(const char* line) {
+  char path[30];
+  DateTime_TC now = DateTime_TC::now();
+  snprintf_P(path, sizeof(path), (PGM_P)F("small_data/%4i%02i%02i.csv"), now.year(), now.month(), now.day());
+  if (!sd.exists("small_data")) {
+    if (!sd.mkdir("small_data")) {
+      if (!hasHadError) {
+        hasHadError = true;
+        serial(F("Unable to create directory: \"small_data\""));
+        COUT("Unable to create directory: \"small_data\"");
+        return;
+      }
+    }
+  }
+  appendDataToPath(line, path);
+  COUT(line);
+}
+
+/**
  * append data to a path
  */
 void SD_TC::appendDataToPath(const char* line, const char* path) {

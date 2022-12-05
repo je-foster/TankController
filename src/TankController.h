@@ -48,6 +48,4 @@ private:
   void handleUI();
   void updateControls();
   void updateState();
-  void writeDataToSD();
-  void writeDataToSerial();
 };
