@@ -99,15 +99,13 @@ unittest(loopInCalibration) {
         "04/15/2021 00:00:01,   0, C, 20.00, C, 8.100,    3, 100000.0,      0.0,      0.0\n",
         data1);
   }
-  file2.close();
+  file1.close();
   File file2 = SD_TC::instance()->open("sparse_logs/20210415.csv");
   assertTrue(file2.size() < sizeof(data2));
   if (file2.size() < sizeof(data2)) {
     file2.read(data2, file2.size());
     data2[file2.size()] = '\0';
-    assertEqual(
-        "02:01,C,C\n",
-        data2);
+    assertEqual("02:01,C,C\n", data2);
   }
   file2.close();
 }
@@ -145,6 +143,41 @@ unittest(appendData) {
   file.read(data, file.size());
   data[file.size()] = '\0';
   assertEqual("time,tankid,temp,temp setpoint,pH,pH setpoint,onTime,Kp,Ki,Kd\nline 3\n", data);
+  file.close();
+}
+
+unittest(appendToSparseDataLog) {
+  char data[80];
+  DateTime_TC d1(2021, 4, 15), d2(2021, 4, 16);
+  SD_TC* sd = SD_TC::instance();
+
+  assertFalse(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  assertFalse(SD_TC::instance()->exists("sparse_logs/20210416.csv"));
+
+  // write data for day 15
+  d1.setAsCurrent();
+  sd->appendToSparseDataLog("01:15,-242.02,0.000");
+  assertTrue(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  assertFalse(SD_TC::instance()->exists("sparse_logs/20210416.csv"));
+
+  // write data for day 16
+  d2.setAsCurrent();
+  sd->appendData("01:15,-242.02,0.000");
+  assertTrue(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  assertTrue(SD_TC::instance()->exists("sparse_logs/20210416.csv"));
+
+  // verify contents of 15.csv
+  File file = SD_TC::instance()->open("sparse_logs/20210415.csv");
+  file.read(data, file.size());
+  data[file.size()] = '\0';
+  assertEqual("01:15,-242.02,0.000\n", data);
+  file.close();
+
+  // verify contents of 16.csv
+  file = SD_TC::instance()->open("sparse_logs/20210416.csv");
+  file.read(data, file.size());
+  data[file.size()] = '\0';
+  assertEqual("01:15,-242.02,0.000\n", data);
   file.close();
 }
 
