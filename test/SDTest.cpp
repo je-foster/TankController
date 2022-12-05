@@ -29,18 +29,18 @@ unittest(tankControllerLoop) {
   DateTime_TC d1(2021, 4, 15);
   d1.setAsCurrent();
   assertFalse(SD_TC::instance()->exists("20210415.csv"));
-  assertFalse(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  assertFalse(SD_TC::instance()->exists("sparse_data/20210415.csv"));
   tc->loop();
   tc->loop();
   delay(1000);
   tc->loop();
   tc->loop();
   assertTrue(SD_TC::instance()->exists("20210415.csv"));
-  assertFalse(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  assertFalse(SD_TC::instance()->exists("sparse_data/20210415.csv"));
   delay(120000);
   tc->loop();
   tc->loop();
-  assertTrue(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  assertTrue(SD_TC::instance()->exists("sparse_data/20210415.csv"));
   delay(300000);
   tc->loop();
   File file1 = SD_TC::instance()->open("20210415.csv");
@@ -56,7 +56,7 @@ unittest(tankControllerLoop) {
         data1);
   }
   file1.close();
-  File file2 = SD_TC::instance()->open("sparse_logs/20210415.csv");
+  File file2 = SD_TC::instance()->open("sparse_data/20210415.csv");
   assertTrue(file2.size() < sizeof(data2));
   if (file2.size() < sizeof(data2)) {
     file2.read(data2, file2.size());
@@ -79,16 +79,16 @@ unittest(loopInCalibration) {
   DateTime_TC d1(2021, 4, 15);
   d1.setAsCurrent();
   assertFalse(SD_TC::instance()->exists("20210415.csv"));
-  assertFalse(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  assertFalse(SD_TC::instance()->exists("sparse_data/20210415.csv"));
   tc->loop();
   delay(1000);
   tc->loop();
   tc->loop();
   assertTrue(SD_TC::instance()->exists("20210415.csv"));
-  assertFalse(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  assertFalse(SD_TC::instance()->exists("sparse_data/20210415.csv"));
   delay(120000);
   tc->loop();
-  assertTrue(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  assertTrue(SD_TC::instance()->exists("sparse_data/20210415.csv"));
   File file1 = SD_TC::instance()->open("20210415.csv");
   assertTrue(file1.size() < sizeof(data1));
   if (file1.size() < sizeof(data1)) {
@@ -100,7 +100,7 @@ unittest(loopInCalibration) {
         data1);
   }
   file1.close();
-  File file2 = SD_TC::instance()->open("sparse_logs/20210415.csv");
+  File file2 = SD_TC::instance()->open("sparse_data/20210415.csv");
   assertTrue(file2.size() < sizeof(data2));
   if (file2.size() < sizeof(data2)) {
     file2.read(data2, file2.size());
@@ -151,30 +151,30 @@ unittest(appendToSparseDataLog) {
   DateTime_TC d1(2021, 4, 15), d2(2021, 4, 16);
   SD_TC* sd = SD_TC::instance();
 
-  assertFalse(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
-  assertFalse(SD_TC::instance()->exists("sparse_logs/20210416.csv"));
+  assertFalse(SD_TC::instance()->exists("sparse_data/20210415.csv"));
+  assertFalse(SD_TC::instance()->exists("sparse_data/20210416.csv"));
 
   // write data for day 15
   d1.setAsCurrent();
   sd->appendToSparseDataLog("01:15,-242.02,0.000");
-  assertTrue(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
-  assertFalse(SD_TC::instance()->exists("sparse_logs/20210416.csv"));
+  assertTrue(SD_TC::instance()->exists("sparse_data/20210415.csv"));
+  assertFalse(SD_TC::instance()->exists("sparse_data/20210416.csv"));
 
   // write data for day 16
   d2.setAsCurrent();
   sd->appendToSparseDataLog("01:15,-242.02,0.000");
-  assertTrue(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
-  assertTrue(SD_TC::instance()->exists("sparse_logs/20210416.csv"));
+  assertTrue(SD_TC::instance()->exists("sparse_data/20210415.csv"));
+  assertTrue(SD_TC::instance()->exists("sparse_data/20210416.csv"));
 
   // verify contents of 15.csv
-  File file = SD_TC::instance()->open("sparse_logs/20210415.csv");
+  File file = SD_TC::instance()->open("sparse_data/20210415.csv");
   file.read(data, file.size());
   data[file.size()] = '\0';
   assertEqual("01:15,-242.02,0.000\n", data);
   file.close();
 
   // verify contents of 16.csv
-  file = SD_TC::instance()->open("sparse_logs/20210416.csv");
+  file = SD_TC::instance()->open("sparse_data/20210416.csv");
   file.read(data, file.size());
   data[file.size()] = '\0';
   assertEqual("01:15,-242.02,0.000\n", data);
