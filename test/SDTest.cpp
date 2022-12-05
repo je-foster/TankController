@@ -23,27 +23,50 @@ unittest(singleton) {
 }
 
 unittest(tankControllerLoop) {
-  char data[250];
+  char data1[300];
+  char data2[50];
   TankController* tc = TankController::instance();
   DateTime_TC d1(2021, 4, 15);
   d1.setAsCurrent();
   assertFalse(SD_TC::instance()->exists("20210415.csv"));
+  assertFalse(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  tc->loop();
   tc->loop();
   delay(1000);
   tc->loop();
+  tc->loop();
   assertTrue(SD_TC::instance()->exists("20210415.csv"));
-  File file = SD_TC::instance()->open("20210415.csv");
-  assertTrue(file.size() < sizeof(data));
-  if (file.size() < sizeof(data)) {
-    file.read(data, file.size());
-    data[file.size()] = '\0';
+  assertFalse(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  delay(60000);
+  tc->loop();
+  tc->loop();
+  assertTrue(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
+  delay(300000);
+  tc->loop();
+  File file1 = SD_TC::instance()->open("20210415.csv");
+  assertTrue(file1.size() < sizeof(data1));
+  if (file1.size() < sizeof(data1)) {
+    file1.read(data1, file1.size());
+    data1[file1.size()] = '\0';
     assertEqual(
         "time,tankid,temp,temp setpoint,pH,pH setpoint,onTime,Kp,Ki,Kd\n"
         "04/15/2021 00:00:00,   0, -242.02, 20.00, 0.000, 8.100,    1, 100000.0,      0.0,      0.0\n"
-        "04/15/2021 00:00:01,   0, -242.02, 20.00, 0.000, 8.100,    2, 100000.0,      0.0,      0.0\n",
-        data);
+        "04/15/2021 00:00:01,   0, -242.02, 20.00, 0.000, 8.100,    2, 100000.0,      0.0,      0.0\n"
+        "04/15/2021 00:01:01,   0, -242.02, 20.00, 0.000, 8.100,    2, 100000.0,      0.0,      0.0\n",
+        data1);
   }
-  file.close();
+  file2.close();
+  File file2 = SD_TC::instance()->open("sparse_logs/20210415.csv");
+  assertTrue(file2.size() < sizeof(data2));
+  if (file2.size() < sizeof(data2)) {
+    file2.read(data2, file2.size());
+    data2[file2.size()] = '\0';
+    assertEqual(
+        "01:01,-242.02,0.000\n"
+        "06:01,-242.02,0.000\n",
+        data2);
+  }
+  file2.close();
 }
 
 unittest(loopInCalibration) {
