@@ -46,10 +46,16 @@ unittest(NoTankID) {
   tc->loop();
   delay(75 * 1000);  // a bit over one minute
   state->serialPort[0].dataOut = "";
+  // First loop triggers intermittent logging (DataLogger_TC) and PushingBox
+  // Second loop triggers incessant logging (DataLogger_TC)
+  // Third loop triggers Serial logging (DataLogger_TC)
+  tc->loop();
+  tc->loop();
   tc->loop();
   char expected[] =
-      "15:26 pH=7.000 temp=-242.02\r\n"
-      "Set Tank ID in order to send data to PushingBox\r\n";
+      "Intermittent Logging: 15:26,-242.02,7.000\r\n"
+      "Set Tank ID in order to send data to PushingBox\r\n"
+      "15:26 pH=7.000 temp=-242.02\r\n";
   assertEqual(expected, state->serialPort[0].dataOut);
 }
 
@@ -78,6 +84,7 @@ unittest(SendData) {
   state->serialPort[0].dataOut = "";
   delay(60 * 1000);  // wait for one minute to ensure we send
   tc->loop();
+  tc->loop();
   assertTrue(pClient->connected());
   assertNotNull(pClient->writeBuffer());
   deque<uint8_t> buffer = *(pClient->writeBuffer());
@@ -96,13 +103,13 @@ unittest(SendData) {
       "\r\n";
   assertEqual(expected1, bufferResult.c_str());
   char expected2[] =
-      "15:26 pH=7.125 temp=20.26\r\n"
       "GET /pushingbox?devid=PushingBoxIdentifier&tankid=99&tempData=20.26&pHdata=7.125 HTTP/1.1\r\n"
       "attempting to connect to PushingBox...\r\n"
       "connected\r\n"
       "===== PushingBox response:\r\n"
       "[PushingBox response]\r\n"
-      "===== end of PushingBox response\r\n";
+      "===== end of PushingBox response\r\n"
+      "15:26 pH=7.125 temp=20.26\r\n";
   assertEqual(expected2, state->serialPort[0].dataOut);
   EthernetClient::stopMockServer(pPushingBox->getServer(), (uint32_t)0, 80);
   pClient->writeBuffer()->clear();
