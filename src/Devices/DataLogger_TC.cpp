@@ -31,15 +31,17 @@ DataLogger_TC* DataLogger_TC::instance() {
 void DataLogger_TC::loop() {
   // Is it time to log?
   unsigned long msNow = millis();
-  if (msNow >= nextIntermittentLogTime) {
-    writeToSDIntermittently();
-    nextIntermittentLogTime = (msNow / INTERMITTENT_LOGGING_INTERVAL + 1) * INTERMITTENT_LOGGING_INTERVAL;
-  } else if (msNow >= nextIncessantLogTime) {
-    writeToSDIncessantly();
-    nextIncessantLogTime = (msNow / INCESSANT_LOGGING_INTERVAL + 1) * INCESSANT_LOGGING_INTERVAL;
+  if (msNow >= nextSparseDataLogTime) {
+    writeToSparseDataLog();
+    nextSparseDataLogTime =
+        (msNow / (unsigned long)SPARSE_LOGGING_INTERVAL + 1) * (unsigned long)SPARSE_LOGGING_INTERVAL;
+  } else if (msNow >= nextComprehensiveDataLogTime) {
+    writeToComprehensiveDataLog();
+    nextComprehensiveDataLogTime =
+        (msNow / (unsigned long)COMPREHENSIVE_LOGGING_INTERVAL + 1) * (unsigned long)COMPREHENSIVE_LOGGING_INTERVAL;
   } else if (msNow >= nextSerialLogTime) {
     writeToSerial();
-    nextSerialLogTime = (msNow / SERIAL_LOGGING_INTERVAL + 1) * SERIAL_LOGGING_INTERVAL;
+    nextSerialLogTime = (msNow / (unsigned long)SERIAL_LOGGING_INTERVAL + 1) * (unsigned long)SERIAL_LOGGING_INTERVAL;
   }
 }
 
@@ -66,7 +68,7 @@ void DataLogger_TC::writeToSerial() {
  * @brief write the current data to the huge log file on the SD
  *
  */
-void DataLogger_TC::writeToSDIncessantly() {
+void DataLogger_TC::writeToComprehensiveDataLog() {
   char currentTemperature[10];
   char currentPh[10];
   if (TankController::instance()->isInCalibration()) {
@@ -111,7 +113,7 @@ void DataLogger_TC::writeToSDIncessantly() {
  * @brief write the current data to the smaller log file on the SD
  *
  */
-void DataLogger_TC::writeToSDIntermittently() {
+void DataLogger_TC::writeToSparseDataLog() {
   char currentTemperature[10];
   char currentPh[10];
   if (TankController::instance()->isInCalibration()) {
@@ -132,6 +134,6 @@ void DataLogger_TC::writeToSDIntermittently() {
     // TODO: Log a warning that string was truncated
     serial(F("WARNING! String was truncated to \"%s\""), buffer);
   }
-  serial(F("Intermittent Logging: %s"), buffer);
-  SD_TC::instance()->appendToIntermittentLog(buffer);
+  serial(F("Sparse Data Log: %s"), buffer);
+  SD_TC::instance()->appendToSparseDataLog(buffer);
 }

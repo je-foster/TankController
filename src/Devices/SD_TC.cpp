@@ -50,12 +50,12 @@ void SD_TC::appendData(const char* header, const char* line) {
  *
  * @param line
  */
-void SD_TC::appendToIntermittentLog(const char* line) {
+void SD_TC::appendToSparseDataLog(const char* line) {
   char path[30];
   DateTime_TC now = DateTime_TC::now();
-  snprintf_P(path, sizeof(path), (PGM_P)F("small_data/%4i%02i%02i.csv"), now.year(), now.month(), now.day());
-  if (!sd.exists(F("small_data"))) {
-    if (!sd.mkdir(F("small_data"))) {
+  snprintf_P(path, sizeof(path), (PGM_P)F("sparse_data/%4i%02i%02i.csv"), now.year(), now.month(), now.day());
+  if (!sd.exists(F("sparse_data"))) {
+    if (!sd.mkdir(F("sparse_data"))) {
       if (!hasHadError) {
         hasHadError = true;
         serial(F("Unable to create directory: \"small_data\""));

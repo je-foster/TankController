@@ -46,14 +46,14 @@ unittest(NoTankID) {
   tc->loop();
   delay(75 * 1000);  // a bit over one minute
   state->serialPort[0].dataOut = "";
-  // First loop triggers intermittent logging (DataLogger_TC) and PushingBox
-  // Second loop triggers incessant logging (DataLogger_TC)
+  // First loop triggers sparse data logging (DataLogger_TC) and PushingBox
+  // Second loop triggers comprehensive data logging (DataLogger_TC)
   // Third loop triggers Serial logging (DataLogger_TC)
   tc->loop();
   tc->loop();
   tc->loop();
   char expected[] =
-      "Intermittent Logging: 15:26,-242.02,7.000\r\n"
+      "Sparse Data Log: 15:26,-242.02,7.000\r\n"
       "Set Tank ID in order to send data to PushingBox\r\n"
       "15:26 pH=7.000 temp=-242.02\r\n";
   assertEqual(expected, state->serialPort[0].dataOut);

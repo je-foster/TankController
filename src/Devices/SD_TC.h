@@ -21,7 +21,7 @@ public:
 
   // instance methods
   void appendData(const char* header, const char* line);
-  void appendToIntermittentLog(const char* line);
+  void appendToSparseDataLog(const char* line);
   void appendToLog(const char* line);
   bool exists(const char* path);
   bool format();
