@@ -162,7 +162,7 @@ unittest(appendToSparseDataLog) {
 
   // write data for day 16
   d2.setAsCurrent();
-  sd->appendData("01:15,-242.02,0.000");
+  sd->appendToSparseDataLog("01:15,-242.02,0.000");
   assertTrue(SD_TC::instance()->exists("sparse_logs/20210415.csv"));
   assertTrue(SD_TC::instance()->exists("sparse_logs/20210416.csv"));
 
