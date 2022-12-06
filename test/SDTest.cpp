@@ -23,7 +23,7 @@ unittest(singleton) {
 }
 
 unittest(tankControllerLoop) {
-  char data1[300];
+  char data1[400];
   char data2[50];
   TankController* tc = TankController::instance();
   DateTime_TC d1(2021, 4, 15);
@@ -62,8 +62,8 @@ unittest(tankControllerLoop) {
     file2.read(data2, file2.size());
     data2[file2.size()] = '\0';
     assertEqual(
-        "02:01,-242.02,0.000\n"
-        "07:01,-242.02,0.000\n",
+        "00:02,-242.02,0.000\n"
+        "00:07,-242.02,0.000\n",
         data2);
   }
   file2.close();
@@ -86,7 +86,7 @@ unittest(loopInCalibration) {
   tc->loop();
   assertTrue(SD_TC::instance()->exists("20210415.csv"));
   assertFalse(SD_TC::instance()->exists("sparse_data/20210415.csv"));
-  delay(120000);
+  delay(300000);
   tc->loop();
   assertTrue(SD_TC::instance()->exists("sparse_data/20210415.csv"));
   File file1 = SD_TC::instance()->open("20210415.csv");
@@ -105,7 +105,7 @@ unittest(loopInCalibration) {
   if (file2.size() < sizeof(data2)) {
     file2.read(data2, file2.size());
     data2[file2.size()] = '\0';
-    assertEqual("02:01,C,C\n", data2);
+    assertEqual("00:12,C,C\n", data2);
   }
   file2.close();
 }
