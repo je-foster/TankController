@@ -54,8 +54,8 @@ void SD_TC::appendToSparseDataLog(const char* line) {
   char path[30];
   DateTime_TC now = DateTime_TC::now();
   snprintf_P(path, sizeof(path), (PGM_P)F("sparse_data/%4i%02i%02i.csv"), now.year(), now.month(), now.day());
-  if (!sd.exists(F("sparse_data"))) {
-    if (!sd.mkdir(F("sparse_data"))) {
+  if (!sd.exists((PGM_P)F("sparse_data"))) {
+    if (!sd.mkdir((PGM_P)F("sparse_data"))) {
       if (!hasHadError) {
         hasHadError = true;
         serial(F("Unable to create directory: \"sparse_data\""));
