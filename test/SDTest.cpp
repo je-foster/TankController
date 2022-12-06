@@ -96,7 +96,7 @@ unittest(loopInCalibration) {
     data1[file1.size()] = '\0';
     assertEqual(
         "time,tankid,temp,temp setpoint,pH,pH setpoint,onTime,Kp,Ki,Kd\n"
-        "04/15/2021 00:00:01,   0, C, 20.00, C, 8.100,  422, 100000.0,      0.0,      0.0\n"
+        "04/15/2021 00:00:00,   0, C, 20.00, C, 8.100,  422, 100000.0,      0.0,      0.0\n"
         "04/15/2021 00:00:01,   0, C, 20.00, C, 8.100,  423, 100000.0,      0.0,      0.0\n",
         data1);
   }
