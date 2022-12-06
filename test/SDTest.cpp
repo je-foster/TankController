@@ -52,7 +52,7 @@ unittest(tankControllerLoop) {
         "time,tankid,temp,temp setpoint,pH,pH setpoint,onTime,Kp,Ki,Kd\n"
         "04/15/2021 00:00:00,   0, -242.02, 20.00, 0.000, 8.100,    1, 100000.0,      0.0,      0.0\n"
         "04/15/2021 00:00:01,   0, -242.02, 20.00, 0.000, 8.100,    2, 100000.0,      0.0,      0.0\n"
-        "04/15/2021 00:02:01,   0, -242.02, 20.00, 0.000, 8.100,    2, 100000.0,      0.0,      0.0\n",
+        "04/15/2021 00:02:01,   0, -242.02, 20.00, 0.000, 8.100,  122, 100000.0,      0.0,      0.0\n",
         data1);
   }
   file1.close();
@@ -96,7 +96,8 @@ unittest(loopInCalibration) {
     data1[file1.size()] = '\0';
     assertEqual(
         "time,tankid,temp,temp setpoint,pH,pH setpoint,onTime,Kp,Ki,Kd\n"
-        "04/15/2021 00:00:01,   0, C, 20.00, C, 8.100,    3, 100000.0,      0.0,      0.0\n",
+        "04/15/2021 00:00:01,   0, C, 20.00, C, 8.100,  422, 100000.0,      0.0,      0.0\n"
+        "04/15/2021 00:00:01,   0, C, 20.00, C, 8.100,  423, 100000.0,      0.0,      0.0\n",
         data1);
   }
   file1.close();
@@ -105,7 +106,7 @@ unittest(loopInCalibration) {
   if (file2.size() < sizeof(data2)) {
     file2.read(data2, file2.size());
     data2[file2.size()] = '\0';
-    assertEqual("00:12,C,C\n", data2);
+    assertEqual("00:05,C,C\n", data2);
   }
   file2.close();
 }
