@@ -46,6 +46,31 @@ void DataLogger_TC::loop() {
 }
 
 /**
+ * @brief Compare recorded temperature and pH extremes to the provided values. Replace them if current values are more
+ * extreme or if 'reset' is true.
+ *
+ */
+void DataLogger_TC::updateExtremes(float currentTemp, float currentPh, bool reset) {
+  if (reset) {
+    minTemperature = currentTemp;
+    maxTemperature = currentTemp;
+    minPh = currentPh;
+    maxPh = currentPh;
+  } else {
+    if (currentTemp < minTemperature) {
+      minTemperature = currentTemp;
+    } else if (currentTemp > maxTemperature) {
+      maxTemperature = currentTemp;
+    }
+    if (currentPh < minPh) {
+      minPh = currentPh;
+    } else if (currentPh > maxPh) {
+      maxPh = currentPh;
+    }
+  }
+}
+
+/**
  * @brief write the current data to the serial port
  *
  */
@@ -75,9 +100,11 @@ void DataLogger_TC::writeToComprehensiveDataLog() {
     strscpy_P(currentTemperature, (PGM_P)F("C"), sizeof(currentTemperature));
     strscpy_P(currentPh, (PGM_P)F("C"), sizeof(currentPh));
   } else {
-    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 4, 2, currentTemperature,
-                sizeof(currentTemperature));
-    floattostrf((float)PHProbe::instance()->getPh(), 5, 3, currentPh, sizeof(currentPh));
+    float currentTempFloat = (float)TempProbe_TC::instance()->getRunningAverage();
+    float currentPhFloat = (float)PHProbe::instance()->getPh();
+    floattostrf(currentTempFloat, 4, 2, currentTemperature, sizeof(currentTemperature));
+    floattostrf(currentPhFloat, 5, 3, currentPh, sizeof(currentPh));
+    updateExtremes(currentTempFloat, currentPhFloat, false);
   }
   DateTime_TC dtNow = DateTime_TC::now();
   PID_TC* pPID = PID_TC::instance();
@@ -110,26 +137,41 @@ void DataLogger_TC::writeToComprehensiveDataLog() {
 }
 
 /**
- * @brief write the current data to the smaller log file on the SD
+ * @brief Write the current data to the smaller log file on the SD. Also reset recorded extreme temperature and pH
+ * values to current values (unless device is in calibration).
  *
  */
 void DataLogger_TC::writeToSparseDataLog() {
   char currentTemperature[10];
+  char minTemperatureString[10];
+  char maxTemperatureString[10];
   char currentPh[10];
+  char minPhString[10];
+  char maxPhString[10];
   if (TankController::instance()->isInCalibration()) {
     strscpy_P(currentTemperature, (PGM_P)F("C"), sizeof(currentTemperature));
     strscpy_P(currentPh, (PGM_P)F("C"), sizeof(currentPh));
   } else {
-    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 4, 2, currentTemperature,
-                sizeof(currentTemperature));
-    floattostrf((float)PHProbe::instance()->getPh(), 5, 3, currentPh, sizeof(currentPh));
+    float currentTempFloat = (float)TempProbe_TC::instance()->getRunningAverage();
+    float currentPhFloat = (float)PHProbe::instance()->getPh();
+    floattostrf(currentTempFloat, 4, 2, currentTemperature, sizeof(currentTemperature));
+    floattostrf(currentPhFloat, 5, 3, currentPh, sizeof(currentPh));
+    updateExtremes(currentTempFloat, currentPhFloat, false);
+  }
+  floattostrf(minTemperature, 4, 2, minTemperatureString, sizeof(minTemperatureString));
+  floattostrf(maxTemperature, 4, 2, maxTemperatureString, sizeof(maxTemperatureString));
+  floattostrf(minPh, 5, 3, minPhString, sizeof(minPhString));
+  floattostrf(maxPh, 5, 3, maxPhString, sizeof(maxPhString));
+  if (!TankController::instance()->isInCalibration()) {
+    updateExtremes(currentTempFloat, currentPhFloat, true);
   }
   DateTime_TC dtNow = DateTime_TC::now();
-  static const char format[] PROGMEM = "%02i:%02i,%s,%s";
-  char buffer[32];
+  static const char format[] PROGMEM = "%02i:%02i,%s,%s,%s,%s,%s,%s";
+  char buffer[72];
   int length;
-  length = snprintf_P(buffer, sizeof(buffer), (PGM_P)format, (uint16_t)dtNow.hour(), (uint16_t)dtNow.minute(),
-                      currentTemperature, currentPh);
+  length =
+      snprintf_P(buffer, sizeof(buffer), (PGM_P)format, (uint16_t)dtNow.hour(), (uint16_t)dtNow.minute(),
+                 currentTemperature, minTemperatureString, maxTemperatureString, currentPh, minPhString, maxPhString);
   if ((length > sizeof(buffer)) || (length < 0)) {
     // TODO: Log a warning that string was truncated
     serial(F("WARNING! String was truncated to \"%s\""), buffer);

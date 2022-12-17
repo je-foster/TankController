@@ -17,6 +17,10 @@ public:
 private:
   // class variables
   static DataLogger_TC *_instance;
+  float minTemperature;
+  float maxTemperature;
+  float minPh;
+  float maxPh;
 
   // instance variables
   uint32_t nextComprehensiveDataLogTime = 0;
@@ -25,6 +29,7 @@ private:
   uint32_t nextSerialLogTime = 0;
 
   // instance method
+  void updateExtremes(float currentTemp, float currentPh, bool reset);
   void writeToComprehensiveDataLog();
   void writeToSparseDataLog();
   void writeToSerial();
