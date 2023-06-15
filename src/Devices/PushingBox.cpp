@@ -2,6 +2,7 @@
 
 #include "Devices/EEPROM_TC.h"
 #include "Devices/Ethernet_TC.h"
+#include "Devices/PHControl.h"
 #include "Devices/PHProbe.h"
 #include "Devices/Serial_TC.h"
 #include "Devices/TempProbe_TC.h"
@@ -29,6 +30,11 @@ PushingBox::PushingBox(const char* pushingBoxID) {
 
 void PushingBox::loop() {
   if (!(Ethernet_TC::instance()->getIsUsingDHCP())) {
+    return;
+  }
+  if (PHControl::instance()->isOn()) {
+    // Writing to Google Sheets takes more than 1 second.
+    // Don't do it if the CO2 bubbler is on.
     return;
   }
   // is it time to send ?
