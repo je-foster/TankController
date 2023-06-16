@@ -91,6 +91,21 @@ float TempProbe_TC::getUncorrectedRunningAverage() {
 }
 
 /**
+ * @brief Return the variance in recent temperature readings.
+ *
+ * @return float
+ */
+float getVariance() {
+  float mean = this->getUncorrectedRunningAverage();
+  float sumOfSquares = 0.0;
+  for (size_t i = 0; i < HISTORY_SIZE; ++i) {
+    sumOfSquares += history[i] * history[i];
+  }
+  // mean of the squares minus the square of the mean
+  return (sumOfSquares / HISTORY_SIZE) - (mean * mean);
+}
+
+/**
  * setCorrection(float value)
  *
  * Set a new value for the correction offset

@@ -1,8 +1,8 @@
 #pragma once
 #include <Arduino.h>
 
-// Logging intervals (1sec, 1 min)
-#define SD_LOGGING_INTERVAL 1000
+// Logging intervals (10 sec, 1 min)
+#define SD_LOGGING_INTERVAL 10000
 #define SERIAL_LOGGING_INTERVAL 60000
 
 class DataLogger_TC {

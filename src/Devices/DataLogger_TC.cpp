@@ -47,14 +47,16 @@ void DataLogger_TC::loop() {
  *
  */
 void DataLogger_TC::writeToSD() {
-  char currentTemperature[10];
+  char meanTemperature[10];
+  char tempVariance[10];
   char currentPh[10];
   if (TankController::instance()->isInCalibration()) {
-    strscpy_P(currentTemperature, F("C"), sizeof(currentTemperature));
+    strscpy_P(meanTemperature, F("C"), sizeof(meanTemperature));
+    strscpy_P(tempVariance, F("C"), sizeof(tempVariance));
     strscpy_P(currentPh, F("C"), sizeof(currentPh));
   } else {
-    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 4, 2, currentTemperature,
-                sizeof(currentTemperature));
+    floattostrf((float)TempProbe_TC::instance()->getRunningAverage(), 4, 2, meanTemperature, sizeof(meanTemperature));
+    floattostrf((float)TempProbe_TC::instance()->getVariance(), 6, 3, tempVariance, sizeof(tempVariance));
     floattostrf((float)PHProbe::instance()->getPh(), 5, 3, currentPh, sizeof(currentPh));
   }
   DateTime_TC dtNow = DateTime_TC::now();
@@ -70,16 +72,17 @@ void DataLogger_TC::writeToSD() {
   floattostrf(pPID->getKp(), 8, 1, kp, sizeof(kp));
   floattostrf(pPID->getKi(), 8, 1, ki, sizeof(ki));
   floattostrf(pPID->getKd(), 8, 1, kd, sizeof(kd));
-  const __FlashStringHelper* header = F("time,tankid,temp,temp setpoint,pH,pH setpoint,onTime,Kp,Ki,Kd");
-  const __FlashStringHelper* format = F("%02i/%02i/%4i %02i:%02i:%02i, %3i, %s, %s, %s, %s, %4lu, %s, %s, %s");
-  char header_buffer[64];
+  const __FlashStringHelper* header =
+      F("time,tankid,mean temp,temp setpoint,temp variance,pH,pH setpoint,onTime,Kp,Ki,Kd");
+  const __FlashStringHelper* format = F("%02i/%02i/%4i %02i:%02i:%02i, %3i, %s, %s, %s, %s, %s, %4lu, %s, %s, %s");
+  char header_buffer[84];
   strscpy_P(header_buffer, header, sizeof(header_buffer));
-  char buffer[128];
+  char buffer[140];
   int length;
   length = snprintf_P(buffer, sizeof(buffer), (PGM_P)format, (uint16_t)dtNow.month(), (uint16_t)dtNow.day(),
                       (uint16_t)dtNow.year(), (uint16_t)dtNow.hour(), (uint16_t)dtNow.minute(),
-                      (uint16_t)dtNow.second(), (uint16_t)tankId, currentTemperature, targetTemp, currentPh, targetPh,
-                      (unsigned long)(millis() / 1000), kp, ki, kd);
+                      (uint16_t)dtNow.second(), (uint16_t)tankId, meanTemperature, targetTemp, tempVariance, currentPh,
+                      targetPh, (unsigned long)(millis() / 1000), kp, ki, kd);
   if ((length > sizeof(buffer)) || (length < 0)) {
     // TODO: Log a warning that string was truncated
     serial(F("WARNING! String was truncated to \"%s\""), buffer);

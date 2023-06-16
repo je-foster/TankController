@@ -104,6 +104,7 @@ public:
 
   float getRunningAverage();
   float getUncorrectedRunningAverage();
+  float getVariance();
 
   inline uint8_t readFault() {
     return thermo.readFault();
