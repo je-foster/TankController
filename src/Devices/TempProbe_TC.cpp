@@ -1,8 +1,8 @@
 #include "Devices/TempProbe_TC.h"
 
-#include "DateTime_TC.h"
-#include "EEPROM_TC.h"
-#include "Serial_TC.h"
+#include "Devices/DateTime_TC.h"
+#include "Devices/EEPROM_TC.h"
+#include "Devices/Serial_TC.h"
 #include "TC_util.h"
 
 //  class instance variables
@@ -82,6 +82,9 @@ float TempProbe_TC::getUncorrectedRunningAverage() {
     historyIndex = (historyIndex + 1) % HISTORY_SIZE;
     history[historyIndex] = temp;
     lastTime = currentTime;
+    sampleMean = (sampleMean * sampleCount + temp) / (sampleCount + 1);
+    sampleMeanSquare = (sampleMeanSquare * sampleCount + (temp * temp)) / (sampleCount + 1);
+    ++sampleCount;
   }
   float sum = 0.0;
   for (size_t i = 0; i < HISTORY_SIZE; ++i) {
@@ -116,6 +119,40 @@ void TempProbe_TC::clearCorrection() {
     EEPROM_TC::instance()->setCorrectedTemp(correction);
     serial(F("Set temperature correction to %i.%02i"), (int)correction, (int)(correction * 100 + 0.5) % 100);
   }
+}
+
+/**
+ * @brief Get the mean of the recently sampled temperatures
+ *
+ * @return float
+ */
+float TempProbe_TC::sampleMean() {
+  float correctedMean = sampleMean + correction;
+  if (correctedMean < 0.0) {
+    correctedMean = 0.0;
+  } else if (99.99 < correctedMean) {
+    correctedMean = 99.99;
+  }
+  return correctedMean;
+}
+
+/**
+ * @brief Get the variance of the recently sampled temperatures
+ *
+ * @return float
+ */
+float TempProbe_TC::sampleVariance() {
+  return sampleMeanSquare - (sampleMean * sampleMean);
+}
+
+/**
+ * @brief Reset the mean, variance, and count for a new sample of temperatures
+ *
+ */
+void TempProbe_TC::resetSample() {
+  sampleMean = 0.0;
+  sampleMeanSquare = 0.0;
+  sampleCount = 0;
 }
 
 #if defined(ARDUINO_CI_COMPILATION_MOCKS)

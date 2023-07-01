@@ -118,6 +118,9 @@ public:
   }
   void setCorrection(float value);
   void clearCorrection();
+  float sampleMean();
+  float sampleVariance();
+  void resetSample();
 
 #if defined(ARDUINO_CI_COMPILATION_MOCKS)
   // set a temperature in the mock
@@ -138,6 +141,9 @@ private:
   uint16_t historyIndex = 0;
   float correction = 0.0;
   uint32_t lastTime = 0;
+  float sampleMean = 0.0;        // mean of recent temperatures for data logging
+  float sampleMeanSquare = 0.0;  // mean of squares of recent temperatures for data logging
+  uint16_t sampleCount = 0;      // sample size for the recent means
 
   // Methods
   TempProbe_TC();

@@ -46,6 +46,31 @@ void SD_TC::appendData(const char* header, const char* line) {
 }
 
 /**
+ * append sample data to a data log file
+ */
+void SD_TC::appendSampleData(const char* header, const char* line) {
+  DateTime_TC now = DateTime_TC::now();
+  char path[30];
+  snprintf_P(path, sizeof(path), (PGM_P)F("5min/%4i%02i%02i.csv"), now.year(), now.month(), now.day());
+  if (!sd.exists(F("5min"))) {
+    if (!sd.mkdir(F("5min"))) {
+      if (!hasHadError) {
+        hasHadError = true;
+        serial(F("Unable to create directory: \"5min\""));
+        COUT(F("Unable to create directory: \"5min\""));
+        return;
+      }
+    }
+  }
+  if (!sd.exists(path)) {
+    appendDataToPath(header, path);
+    COUT(header);
+  }
+  appendDataToPath(line, path);
+  COUT(line);
+}
+
+/**
  * append data to a path
  */
 void SD_TC::appendDataToPath(const char* line, const char* path) {

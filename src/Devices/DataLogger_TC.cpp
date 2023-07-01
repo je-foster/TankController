@@ -36,10 +36,43 @@ void DataLogger_TC::loop() {
   if (msNow >= nextSDLogTime) {
     writeToSD();
     nextSDLogTime = (msNow / (unsigned long)SD_LOGGING_INTERVAL + 1) * (unsigned long)SD_LOGGING_INTERVAL;
+  } else if (msNow >= next nextSampleSDLogTime) {
+    writeSampleToSD();
+    nextSampleSDLogTime = (msNow / (unsigned long)SAMPLE_LOGGING_INTERVAL + 1) * (unsigned long)SAMPLE_LOGGING_INTERVAL;
   } else if (msNow >= nextSerialLogTime) {
     writeToSerial();
     nextSerialLogTime = (msNow / (unsigned long)SERIAL_LOGGING_INTERVAL + 1) * (unsigned long)SERIAL_LOGGING_INTERVAL;
   }
+}
+
+/**
+ * @brief write the recent sampled data to the log file on the SD
+ *
+ */
+void DataLogger_TC::writeSampleToSD() {
+  char sampleTemperatureMean[10];
+  char sampleTemperatureStandardDeviation[10];
+  double sampleStdDev = sqrt((float)TempProbe_TC::instance()->sampleVariance());
+  floattostrf((float)TempProbe_TC::instance()->sampleMean(), 4, 2, sampleTemperatureMean,
+              sizeof(sampleTemperatureMean));
+  floattostrf(sampleStdDev, 4, 2, sampleTemperatureStandardDeviation, sizeof(sampleTemperatureStandardDeviation));
+  DateTime_TC dtNow = DateTime_TC::now();
+  char targetTemp[10];
+  floattostrf(TemperatureControl::instance()->getTargetTemperature(), 4, 2, targetTemp, sizeof(targetTemp));
+  const __FlashStringHelper* header = F("time,mean temp,temp std dev,temp setpoint");
+  const __FlashStringHelper* format = F("%02i/%02i/%4i %02i:%02i:%02i, %s, %s, %s");
+  char header_buffer[45];
+  strscpy_P(header_buffer, header, sizeof(header_buffer));
+  char buffer[60];
+  int length;
+  length = snprintf_P(buffer, sizeof(buffer), (PGM_P)format, (uint16_t)dtNow.month(), (uint16_t)dtNow.day(),
+                      (uint16_t)dtNow.year(), (uint16_t)dtNow.hour(), (uint16_t)dtNow.minute(),
+                      (uint16_t)dtNow.second(), sampleTemperatureMean, sampleTemperatureStandardDeviation, targetTemp);
+  if ((length > sizeof(buffer)) || (length < 0)) {
+    // TODO: Log a warning that string was truncated
+    serial(F("WARNING! String was truncated to \"%s\""), buffer);
+  }
+  SD_TC::instance()->appendSampleData(header_buffer, buffer);
 }
 
 /**
