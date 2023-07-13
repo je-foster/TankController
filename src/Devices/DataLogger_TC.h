@@ -14,6 +14,9 @@ public:
   // instance methods
   void loop();
 
+  // instance variables
+  char buffer[128];
+
 private:
   // class variables
   static DataLogger_TC *_instance;
