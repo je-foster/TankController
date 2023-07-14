@@ -57,7 +57,7 @@ void SD_TC::appendSampleData(const char* header, const char* line) {
       if (!hasHadError) {
         hasHadError = true;
         serial(F("Unable to create directory: \"5min\""));
-        COUT(F("Unable to create directory: \"5min\""));
+        COUT("Unable to create directory: \"5min\"");
         return;
       }
     }

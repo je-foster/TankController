@@ -51,23 +51,22 @@ void DataLogger_TC::loop() {
  */
 void DataLogger_TC::writeSampleToSD() {
   char sampleTemperatureMean[10];
-  char sampleTemperatureStandardDeviation[10];
+  char sampleTemperatureStdDev[10];
   double sampleStdDev = sqrt((float)TempProbe_TC::instance()->sampleVariance());
   floattostrf((float)TempProbe_TC::instance()->sampleMean(), 4, 2, sampleTemperatureMean,
               sizeof(sampleTemperatureMean));
-  floattostrf(sampleStdDev, 4, 2, sampleTemperatureStandardDeviation, sizeof(sampleTemperatureStandardDeviation));
+  floattostrf(sampleStdDev, 4, 2, sampleTemperatureStdDev, sizeof(sampleTemperatureStdDev));
   DateTime_TC dtNow = DateTime_TC::now();
   char targetTemp[10];
   floattostrf(TemperatureControl::instance()->getTargetTemperature(), 4, 2, targetTemp, sizeof(targetTemp));
-  const __FlashStringHelper* header = F("time,mean temp,temp std dev,temp setpoint");
-  const __FlashStringHelper* format = F("%02i/%02i/%4i %02i:%02i:%02i, %s, %s, %s");
+  const __FlashStringHelper* header = F("time,temp mean,temp std dev,temp setpoint");
+  const __FlashStringHelper* format = F("%02i:%02i:%02i,%s,%s,%s");
   char header_buffer[45];
   strscpy_P(header_buffer, header, sizeof(header_buffer));
   char buffer[60];
   int length;
-  length = snprintf_P(buffer, sizeof(buffer), (PGM_P)format, (uint16_t)dtNow.month(), (uint16_t)dtNow.day(),
-                      (uint16_t)dtNow.year(), (uint16_t)dtNow.hour(), (uint16_t)dtNow.minute(),
-                      (uint16_t)dtNow.second(), sampleTemperatureMean, sampleTemperatureStandardDeviation, targetTemp);
+  length = snprintf_P(buffer, sizeof(buffer), (PGM_P)format, (uint16_t)dtNow.hour(), (uint16_t)dtNow.minute(),
+                      (uint16_t)dtNow.second(), sampleTemperatureMean, sampleTemperatureStdDev, targetTemp);
   if ((length > sizeof(buffer)) || (length < 0)) {
     // TODO: Log a warning that string was truncated
     serial(F("WARNING! String was truncated to \"%s\""), buffer);
