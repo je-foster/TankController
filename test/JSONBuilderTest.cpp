@@ -17,9 +17,10 @@ unittest(currentData) {
   DateTime_TC feb(2022, 2, 22, 20, 50, 00);
   feb.setAsCurrent();
   PHProbe::instance()->setPh(8.125);                            // actual
-  PHControl::instance()->setTargetPh(8.25);                     // target
+  PHControl::instance()->setBaseTargetPh(8.25);                 // target
   TempProbe_TC::instance()->setTemperature(21.25, true);        // actual
   TemperatureControl::instance()->setTargetTemperature(21.75);  // target
+  TankController::instance()->loop(false);                      // recognize and apply the targets
   JSONBuilder builder;
   int size = builder.buildCurrentValues();
   assertTrue(size > 200);
@@ -43,7 +44,7 @@ unittest(currentData) {
       "\"PID\":\"ON\","
       "\"TankID\":0,"
       "\"Uptime\":\"0d 0h 0m 1s\","
-      "\"Version\":\"23.06.0\""
+      "\"Version\":\"23.7.0 \""
       "}";
   assertEqual(expected, text);
 }

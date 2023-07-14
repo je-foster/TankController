@@ -3,6 +3,7 @@
 #include <ci/ObservableDataStream.h>
 
 #include "DateTime_TC.h"
+#include "Devices/DataLogger_TC.h"
 #include "LiquidCrystal_TC.h"
 #include "MainMenu.h"
 #include "PHCalibrationMid.h"
@@ -18,6 +19,7 @@
  */
 
 const uint16_t TEMP_CONTROL_PIN = 47;
+DataLogger_TC* dataLog = DataLogger_TC::instance();
 GodmodeState* state = GODMODE();
 TankController* tc = TankController::instance();
 LiquidCrystal_TC* lc = LiquidCrystal_TC::instance();
@@ -83,13 +85,13 @@ unittest(AfterIntervalAndOutsideDelta) {
   state->serialPort[0].dataOut = "";  // the history of data written
   // chiller is initially off and goes on when needed
   assertEqual(TURN_SOLENOID_OFF, state->digitalPin[TEMP_CONTROL_PIN]);
-  assertEqual(6, millis());
+  assertEqual(0, millis());
   delay(31006);
-  assertEqual(31012, millis());
+  assertEqual(31006, millis());
   control->updateControl(20.05);
   assertTrue(control->isOn());
   assertEqual(TURN_SOLENOID_ON, state->digitalPin[TEMP_CONTROL_PIN]);
-  assertEqual("chiller turned on at 31012 after 31012 ms\r\n", state->serialPort[0].dataOut);
+  assertEqual("chiller turned on at 31006 after 31006 ms\r\n", state->serialPort[0].dataOut);
   tc->loop(false);
   assertEqual("T=20.02 C 20.00 ", lc->getLines().at(1));
   state->serialPort[0].dataOut = "";  // the history of data written
@@ -97,7 +99,7 @@ unittest(AfterIntervalAndOutsideDelta) {
   control->updateControl(19.95);
   assertFalse(control->isOn());
   assertEqual(TURN_SOLENOID_OFF, state->digitalPin[TEMP_CONTROL_PIN]);
-  assertEqual("chiller turned off at 62031 after 31019 ms\r\n", state->serialPort[0].dataOut);
+  assertEqual("chiller turned off at 62024 after 31018 ms\r\n", state->serialPort[0].dataOut);
   tc->loop(false);
   assertEqual("T 20.02 c 20.00 ", lc->getLines().at(1));
 }
@@ -148,7 +150,7 @@ unittest(OutsideDelta) {
   control->updateControl(19.95);
   assertTrue(control->isOn());
   assertEqual(TURN_SOLENOID_ON, state->digitalPin[TEMP_CONTROL_PIN]);
-  assertEqual("heater turned on at 6 after 6 ms\r\n", state->serialPort[0].dataOut);
+  assertEqual("heater turned on at 0 after 0 ms\r\n", state->serialPort[0].dataOut);
   tc->loop(false);
   assertEqual("T 20.00 H 20.00 ", lc->getLines().at(1));
   state->serialPort[0].dataOut = "";  // the history of data written
@@ -156,7 +158,7 @@ unittest(OutsideDelta) {
   control->updateControl(20.05);
   assertFalse(control->isOn());
   assertEqual(TURN_SOLENOID_OFF, state->digitalPin[TEMP_CONTROL_PIN]);
-  assertEqual("heater turned off at 313 after 307 ms\r\n", state->serialPort[0].dataOut);
+  assertEqual("heater turned off at 306 after 306 ms\r\n", state->serialPort[0].dataOut);
   tc->loop(false);
   assertEqual("T 20.00 h 20.00 ", lc->getLines().at(1));
 }
@@ -190,59 +192,97 @@ unittest(RampGreaterThanZero) {
   assertEqual(TemperatureControl::tempSetTypeTypes::RAMP_TYPE, control->getTempSetType());
   tc->loop(false);
   control->updateControl(tempProbe->getRunningAverage());
+  tc->loop(false);
+  tc->loop(false);
   target = control->getCurrentTemperatureTarget();
   assertTrue(20 <= target && target <= 20.03);
+  assertEqual("T 20.00 c 20.00 ", lc->getLines().at(1));
+  assertEqual("01/15/2021 01:49:26,   0, 20.02, 20.00, 0.000, 8.100,   62, 100000.0,      0.0,      0.0",
+              dataLog->buffer);
   delay(31000);
   // mock arduino restarting
   TemperatureControl::clearInstance();
   control = TemperatureControl::instance();
   // takes 1.5 hours to get to Temp of 7
   delay(1800000);  // delay 30 minutes
-  tc->loop();
+  tc->loop(false);
+  tc->loop(false);
   target = control->getCurrentTemperatureTarget();
   assertTrue(16.6 <= target && target <= 16.8);
-  delay(1800000);  // delay 30 minutes
-  tc->loop();
-  target = control->getCurrentTemperatureTarget();
-  assertTrue(13.2 <= target && target <= 13.4);
+  assertEqual("T=20.00 C 16.61 ", lc->getLines().at(1));
+  assertEqual("01/15/2021 02:18:55,   0, 20.00, 16.61, 0.000, 8.100, 1831, 100000.0,      0.0,      0.0",
+              dataLog->buffer);
   delay(1800000);  // delay 30 minutes
   tc->loop(false);
+  tc->loop(false);
+  target = control->getCurrentTemperatureTarget();
+  assertTrue(13.2 <= target && target <= 13.4);
+  assertEqual("T=20.00 C 13.28 ", lc->getLines().at(1));
+  assertEqual("01/15/2021 02:48:55,   0, 20.00, 13.28, 0.000, 8.100, 3631, 100000.0,      0.0,      0.0",
+              dataLog->buffer);
+  delay(1800000);  // delay 30 minutes
+  tc->loop(false);
+  tc->loop(false);
   assertEqual(10, control->getCurrentTemperatureTarget());
+  assertEqual("T=20.01 C 10.00 ", lc->getLines().at(1));
+  assertEqual("01/15/2021 03:18:55,   0, 20.01, 10.00, 0.000, 8.100, 5431, 100000.0,      0.0,      0.0",
+              dataLog->buffer);
   // ramp time no longer used after it ends
   delay(1800000);  // delay 30 minutes
   delay(1800000);  // delay 30 minutes
   tc->loop(false);
+  tc->loop(false);
   assertEqual(10, control->getCurrentTemperatureTarget());
+  assertEqual("T=20.01 C 10.00 ", lc->getLines().at(1));
+  assertEqual("01/15/2021 04:18:55,   0, 20.01, 10.00, 0.000, 8.100, 9031, 100000.0,      0.0,      0.0",
+              dataLog->buffer);
+  delay(31000);
   TemperatureControl::enableHeater(true);
   control = TemperatureControl::instance();
   assertFalse(control->isOn());
   control->setTargetTemperature(30);
   control->setRampDuration(1.5);
   control->updateControl(tempProbe->getRunningAverage());
+  tc->loop(false);
+  tc->loop(false);
   target = control->getCurrentTemperatureTarget();
   assertTrue(20 <= target && target <= 20.03);
-  delay(31000);
+  assertEqual("T 20.01 h 20.01 ", lc->getLines().at(1));
+  assertEqual("01/15/2021 04:19:26,   0, 20.01, 20.01, 0.000, 8.100, 9062, 100000.0,      0.0,      0.0",
+              dataLog->buffer);
   // mock arduino restarting
   TemperatureControl::clearInstance();
   control = TemperatureControl::instance();
   // takes 1.5 hours to get to Temp of 7
   delay(1800000);  // delay 30 minutes
-  tc->loop();
+  tc->loop(false);
+  tc->loop(false);
   target = control->getCurrentTemperatureTarget();
-  std::cout << "target = " << target << std::endl;
   assertTrue(23.3 <= target && target <= 23.4);
+  assertEqual("T 20.01 H 23.34 ", lc->getLines().at(1));
+  assertEqual("01/15/2021 04:49:26,   0, 20.01, 23.34, 0.000, 8.100, 10862, 100000.0,      0.0,      0.0",
+              dataLog->buffer);
   delay(1800000);  // delay 30 minutes
-  tc->loop();
+  tc->loop(false);
+  tc->loop(false);
   target = control->getCurrentTemperatureTarget();
-  assertTrue(26.7 <= target && target <= 26.8);
+  assertTrue(26.6 <= target && target <= 26.7);
+  assertEqual("T 20.01 H 26.67 ", lc->getLines().at(1));
+  assertEqual("01/15/2021 05:19:26,   0, 20.01, 26.67, 0.000, 8.100, 12662, 100000.0,      0.0,      0.0",
+              dataLog->buffer);
   delay(1800000);  // delay 30 minutes
+  tc->loop(false);
   tc->loop(false);
   assertEqual(30, control->getCurrentTemperatureTarget());
   // ramp time no longer used after it ends
   delay(1800000);  // delay 30 minutes
   delay(1800000);  // delay 30 minutes
   tc->loop(false);
+  tc->loop(false);
   assertEqual(30, control->getCurrentTemperatureTarget());
+  assertEqual("T 20.02 H 30.00 ", lc->getLines().at(1));
+  assertEqual("01/15/2021 06:49:26,   0, 20.02, 30.00, 0.000, 8.100, 18062, 100000.0,      0.0,      0.0",
+              dataLog->buffer);
 }
 
 unittest(ChangeRampToZero) {
