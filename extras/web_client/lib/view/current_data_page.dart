@@ -25,12 +25,20 @@ class CurrentData extends StatelessWidget {
 
   bool canEditCurrentInfo(AppData appData) {
     String v = appData.currentData['Version'].trim();
+    var i = v.indexOf('-');
+    if (i != -1) {
+      v = v.substring(0, i);
+    }
     Version latestVersion = Version.parse(v);
     return latestVersion >= Version.parse('23.6.0');
   }
 
   bool canUploadFile(AppData appData) {
     String v = appData.currentData['Version'].trim();
+    var i = v.indexOf('-');
+    if (i != -1) {
+      v = v.substring(0, i);
+    }
     Version latestVersion = Version.parse(v);
     return latestVersion >= Version.parse('99.9.9'); // not supported yet!
   }
@@ -50,7 +58,7 @@ class CurrentData extends StatelessWidget {
                   TextFormField(
                     initialValue: value.toString(),
                     onFieldSubmitted: (val) {
-                      TcInterface.instance
+                      TcInterface.instance()
                           .put(
                         '${appData.currentData["IPAddress"]}',
                         'data?${key.toString()}=$val',
