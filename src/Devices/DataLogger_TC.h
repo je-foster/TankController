@@ -5,6 +5,9 @@
 #define SD_LOGGING_INTERVAL 1000
 #define SERIAL_LOGGING_INTERVAL 60000
 
+void alert(const __FlashStringHelper *format...);
+void alert(const char *buffer);
+
 class DataLogger_TC {
 public:
   // class methods
@@ -12,6 +15,7 @@ public:
 
   // instance methods
   void loop();
+  void vprintf(const __FlashStringHelper *format, va_list args);
 
   // instance variables
   char buffer[128];

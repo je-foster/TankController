@@ -11,6 +11,21 @@
 #include "Devices/TemperatureControl.h"
 #include "TankController.h"
 
+/**
+ * @brief global alert() functions
+ *
+ */
+void alert(const __FlashStringHelper* format...) {
+  va_list args;
+  va_start(args, format);
+  DataLogger_TC::instance()->vprintf(format, args);
+  va_end(args);
+}
+
+void alert(const char* buffer) {
+  alert(F("%s"), buffer);
+}
+
 // class variables
 DataLogger_TC* DataLogger_TC::_instance = nullptr;
 
@@ -41,6 +56,13 @@ void DataLogger_TC::loop() {
     writeToSerial();
     nextSerialLogTime = (msNow / (unsigned long)SERIAL_LOGGING_INTERVAL + 1) * (unsigned long)SERIAL_LOGGING_INTERVAL;
   }
+}
+
+void DataLogger_TC::vprintf(const __FlashStringHelper* format, va_list args) {
+  char buffer[128];
+  vsnprintf_P(buffer, sizeof(buffer), (PGM_P)format, args);
+  serial(F("ALERT %s"), buffer);
+#endif
 }
 
 /**
