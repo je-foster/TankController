@@ -43,6 +43,8 @@ INCLUDE=-I$(ARDUINO_CI)/arduino \
   -I$(LIBRARIES)/SdFat/src/SpiDriver \
   -I$(LIBRARIES)/SdFat/src/common \
   -I$(LIBRARIES)/SdFat/src/iostream
+  
+menu : $(BIN)/MainMenu.o
 
 .PHONY : all
 all : $(BIN)/BlinkTest.cpp.bin $(BIN)/DateTimeTest.cpp.bin $(BIN)/EEPROMTest.cpp.bin \
