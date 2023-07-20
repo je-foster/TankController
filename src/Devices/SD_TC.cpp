@@ -31,6 +31,13 @@ SD_TC::SD_TC() {
   }
 }
 
+void SD_TC::appendAlert(const char* alertText) {
+  char path[18];
+  strscpy_P(path, F("pendingAlerts.txt"), sizeof(path));
+  appendDataToPath(alertText, path);
+  COUT(alertText);
+}
+
 /**
  * append data to a data log file
  */

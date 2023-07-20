@@ -20,6 +20,7 @@ public:
   static SD_TC* instance();
 
   // instance methods
+  void appendAlert(const char* alertText);
   void appendData(const char* header, const char* line);
   void appendToLog(const char* line);
   bool exists(const char* path);

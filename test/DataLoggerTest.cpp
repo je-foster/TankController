@@ -13,6 +13,10 @@ unittest(AlertTest) {
   serial(F("foo"));    // "Unable to create directory"
 
   // send an alert
+  alert("Settings have changed");
+  assertEqual("ALERT: Settings have changed", Serial_TC::instance()->buffer);
+
+  // send a formatted alert
   alert(F("Tank %s temperature is %.1f above setpoint"), "4", 2.21);
   assertEqual("ALERT: Tank 4 temperature is 2.2 above setpoint", Serial_TC::instance()->buffer);
 }
