@@ -62,7 +62,6 @@ void DataLogger_TC::vprintf(const __FlashStringHelper* format, va_list args) {
   char buffer[128];
   vsnprintf_P(buffer, sizeof(buffer), (PGM_P)format, args);
   serial(F("ALERT: %s"), buffer);
-#endif
 }
 
 /**

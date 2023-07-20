@@ -3,6 +3,7 @@
 
 #include "Devices/LiquidCrystal_TC.h"
 #include "EEPROM_TC.h"
+#include "Serial_TC.h"
 #include "TC_util.h"
 #include "TankController.h"
 #include "TempProbe_TC.h"
@@ -30,9 +31,8 @@ unittest(test) {
   assertTrue(tc->isInCalibration());
 
   // UI sets actual temperature to 10.5
-  state->serialPort[0].dataOut = "";  // the history of data written
   test->setValue(10.5);
-  assertEqual("Set temperature correction to 0.50\r\n", state->serialPort[0].dataOut);
+  assertEqual("Set temperature correction to 0.50", Serial_TC::instance()->buffer);
 
   // The new temperature should be 10.5
   temp = tempProbe->getRawTemperature();
