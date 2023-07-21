@@ -45,7 +45,7 @@ INCLUDE=-I$(ARDUINO_CI)/arduino \
   -I$(LIBRARIES)/SdFat/src/iostream
   
 .PHONY : all
-all : $(BIN)/BlinkTest.cpp.bin $(BIN)/DateTimeTest.cpp.bin $(BIN)/EEPROMTest.cpp.bin \
+all : $(BIN)/BlinkTest.cpp.bin $(BIN)/DataLoggerTest.cpp.bin $(BIN)/DateTimeTest.cpp.bin $(BIN)/EEPROMTest.cpp.bin \
   $(BIN)/EnablePIDTest.cpp.bin $(BIN)/EthernetServerTest.cpp.bin $(BIN)/EthernetTest.cpp.bin \
   $(BIN)/GetTimeTest.cpp.bin $(BIN)/JSONBuilderTest.cpp.bin $(BIN)/KeypadTest.cpp.bin \
 	$(BIN)/LiquidCrystalTest.cpp.bin \
@@ -70,6 +70,9 @@ GPP_TEST=g++ $(FLAGS) -L$(BIN) $(INCLUDE)
 
 $(BIN)/BlinkTest.cpp.bin: $(BIN)/libarduino.so $(TEST)/BlinkTest.cpp
 	$(GPP_TEST) -o $(BIN)/BlinkTest.cpp.bin $(TEST)/BlinkTest.cpp -larduino
+
+$(BIN)/DataLoggerTest.cpp.bin: $(BIN)/libarduino.so $(TEST)/DataLoggerTest.cpp
+	$(GPP_TEST) -o $(BIN)/DataLoggerTest.cpp.bin $(TEST)/DataLoggerTest.cpp -larduino
 
 $(BIN)/DateTimeTest.cpp.bin: $(BIN)/libarduino.so $(TEST)/DateTimeTest.cpp
 	$(GPP_TEST) -o $(BIN)/DateTimeTest.cpp.bin $(TEST)/DateTimeTest.cpp -larduino

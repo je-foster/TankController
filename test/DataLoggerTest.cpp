@@ -1,7 +1,6 @@
-#include <RTClib.h>
-#include <Serial_TC.h>
+#include <Arduino.h>
+#include <ArduinoUnitTests.h>
 
-#include "ArduinoUnitTests.h"
 #include "Devices/DataLogger_TC.h"
 #include "Devices/DateTime_TC.h"
 #include "Devices/Serial_TC.h"
