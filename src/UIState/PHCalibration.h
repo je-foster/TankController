@@ -12,6 +12,13 @@ public:
   float getCurrentValue() override {
     return 0;
   }
+  void handleKey(char key) {
+    if (key == 'D') {  // cancel but show calibration status
+      this->setNextState(new Wait(tc, 3000, new SeePHCalibration(tc, true)));
+    } else {
+      NumberCollectorState::handleKey(key);
+    }
+  }
   void loop() override {
     printValue();
   }
