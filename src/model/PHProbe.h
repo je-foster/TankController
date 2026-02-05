@@ -18,7 +18,7 @@ class PHProbe {
 public:
   static PHProbe* instance();
   float getPh() {
-    return value;
+    return pHValue;
   }
   void clearCalibration();
   void getCalibration(char* buffer, int size);
@@ -49,7 +49,7 @@ private:
   // Class variable
   static PHProbe* _instance;
   // instance variable
-  float value = 0;
+  float pHValue = 0;
   char calibrationResponse[17] = "";
   char slopeResponse[32] = "";
   bool slopeIsOutOfRange = false;

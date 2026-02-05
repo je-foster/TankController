@@ -12,13 +12,13 @@
 /**
  * static variable for singleton
  */
-PHProbe *PHProbe::_instance = nullptr;
+PHProbe* PHProbe::_instance = nullptr;
 
 //  class methods
 /**
  * static member function to return singleton
  */
-PHProbe *PHProbe::instance() {
+PHProbe* PHProbe::instance() {
   if (!_instance) {
     _instance = new PHProbe();
   }
@@ -51,7 +51,7 @@ void PHProbe::sendCalibrationRequest() {
   strscpy_P(calibrationResponse, F("PH Calibration"), sizeof(calibrationResponse));
 }
 
-void PHProbe::getCalibration(char *buffer, int size) {
+void PHProbe::getCalibration(char* buffer, int size) {
   strscpy(buffer, calibrationResponse, size);
 }
 
@@ -61,7 +61,7 @@ void PHProbe::sendSlopeRequest() {
   strscpy_P(slopeResponse, F("Requesting..."), sizeof(slopeResponse));
 }
 
-void PHProbe::getSlope(char *buffer, int size) {
+void PHProbe::getSlope(char* buffer, int size) {
   // for example "99.7,100.3, -0.89" or "Requesting..."
   strscpy(buffer, slopeResponse, size);
 }
@@ -80,11 +80,11 @@ void PHProbe::serialEvent1() {
     if (string.length() > 0) {
       if (isdigit(string[0])) {  // if the first character in the string is a digit
         // convert the string to a floating point number so it can be evaluated by the Arduino
-        value = string.toFloat();
-        if (value < 0) {
-          value = 0;
-        } else if (value > 14) {
-          value = 14;
+        pHValue = string.toFloat();
+        if (pHValue < 0) {
+          pHValue = 0;
+        } else if (pHValue > 14) {
+          pHValue = 14;
         }
       } else if (string[0] == '?') {  // answer to a previous query
         serial(F("PHProbe serialEvent1: \"%s\""), string.c_str());
@@ -189,7 +189,7 @@ void PHProbe::setPh(float newValue) {
   TankController::instance()->loop();          // update the controls based on the current readings
 }
 
-void PHProbe::setPhSlope(const char *slope) {
+void PHProbe::setPhSlope(const char* slope) {
   GODMODE()->serialPort[1].dataIn = String(slope);  // the queue of data waiting to be read
   TankController::instance()->serialEvent1();       // fake interrupt to update the current pH reading
   TankController::instance()->loop();               // update the controls based on the current readings
