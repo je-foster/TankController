@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include <ArduinoUnitTests.h>
 
+#include <string>
+#include <vector>
+
 #include "DataLogger.h"
 #include "EEPROM_TC.h"
 #include "PHProbe.h"
@@ -8,13 +11,13 @@
 #include "TC_util.h"
 #include "TankController.h"
 
-EEPROM_TC *eeprom = EEPROM_TC::instance();
-PHProbe *pHProbe = PHProbe::instance();
-TankController *tc = TankController::instance();
+EEPROM_TC* eeprom = EEPROM_TC::instance();
+PHProbe* pHProbe = PHProbe::instance();
+TankController* tc = TankController::instance();
 
 unittest(singleton) {
-  PHProbe *singleton1 = PHProbe::instance();
-  PHProbe *singleton2 = PHProbe::instance();
+  PHProbe* singleton1 = PHProbe::instance();
+  PHProbe* singleton2 = PHProbe::instance();
   assertEqual(singleton1, singleton2);
 }
 
@@ -26,9 +29,9 @@ unittest(constructor) {
 unittest(serialEvent1) {
   tc->loop();  // Writes something to EEPROM, triggering a DataLogger warning
   tc->loop();  // DataLogger writes to SD card
-  DataLogger *dl = DataLogger::instance();
+  DataLogger* dl = DataLogger::instance();
   dl->reset();
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   assertEqual("", state->serialPort[1].dataOut);
   tc->serialEvent1();  // fake interrupt
@@ -74,7 +77,7 @@ unittest(serialEvent1CatchBadSlope) {
 }
 
 unittest(clearCalibration) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   eeprom->setIgnoreBadPHSlope(true);
   assertTrue(eeprom->getIgnoreBadPHSlope());
@@ -86,7 +89,7 @@ unittest(clearCalibration) {
 }
 
 unittest(clearBadCalibration) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   eeprom->setIgnoreBadPHSlope(true);
   assertTrue(eeprom->getIgnoreBadPHSlope());
@@ -98,7 +101,7 @@ unittest(clearBadCalibration) {
 }
 
 unittest(sendCalibrationRequest) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   assertEqual("", state->serialPort[1].dataOut);
   pHProbe->sendCalibrationRequest();
@@ -107,7 +110,7 @@ unittest(sendCalibrationRequest) {
 }
 
 unittest(getCalibration) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   assertEqual("", state->serialPort[1].dataOut);
   char buffer[17];
@@ -119,8 +122,39 @@ unittest(getCalibration) {
   assertEqual("PH Calibra: 3 pt", buffer);
 }
 
+unittest(receiveCalibrationString) {
+  GodmodeState* state = GODMODE();
+  state->reset();
+  assertEqual("", state->serialPort[1].dataOut);
+  char buffer[121];
+
+  pHProbe->getCalibrationString(buffer, sizeof(buffer));
+  assertEqual("", buffer);
+  std::vector<std::string> segments = {"596F75206172\r", "65206120636F\r", "333333333333\r", "444444444444\r",
+                                       "555555555555\r", "666666666666\r", "777777777777\r", "888888888888\r",
+                                       "999999999999\r", "6F6C20677579\r"};
+  pHProbe->setReceivingCalibrationString(true);
+  for (int i = 0; i < 10; i++) {
+    pHProbe->sendCalibrationStringSegment(segments[i].c_str());
+    assertTrue(pHProbe->getReceivingCalibrationString());
+    // Also check that "Export\r" was sent to serial output
+    // The previous two lines are really testing requestCalibrationString()
+  }
+  pHProbe->sendCalibrationStringSegment("*DONE");
+  assertFalse(pHProbe->getReceivingCalibrationString());
+  // Also check that "C,1\r" was sent to serial output
+  pHProbe->getCalibrationString(buffer, sizeof(buffer));
+  assertEqual(
+      "596F7520617265206120636F3333333333334444444444445555555555556666666666667777777777778888888888889999999999996F6C"
+      "20677579",
+      buffer);
+}
+
+unittest(requestCalibrationString) {
+}
+
 unittest(setTemperatureCompensation) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   assertEqual("", state->serialPort[1].dataOut);
   pHProbe->setTemperatureCompensation(30.25);
@@ -134,7 +168,7 @@ unittest(setTemperatureCompensation) {
 }
 
 unittest(setLowpointCalibration) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   // TODO: the following two lines are commented out in another branch
   eeprom->setIgnoreBadPHSlope(true);
@@ -147,7 +181,7 @@ unittest(setLowpointCalibration) {
 }
 
 unittest(setMidpointCalibration) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   DataLogger::instance()->reset();
   assertFalse(DataLogger::instance()->getShouldWriteWarning());
@@ -164,7 +198,7 @@ unittest(setMidpointCalibration) {
 }
 
 unittest(settingMidpointClearsBadCalibration) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   eeprom->setIgnoreBadPHSlope(true);
   assertTrue(eeprom->getIgnoreBadPHSlope());
@@ -176,7 +210,7 @@ unittest(settingMidpointClearsBadCalibration) {
 }
 
 unittest(setHighpointCalibration) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   // TODO: the following two lines are commented out in another branch
   eeprom->setIgnoreBadPHSlope(true);
@@ -189,7 +223,7 @@ unittest(setHighpointCalibration) {
 }
 
 unittest(sendSlopeRequest) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   assertEqual("", state->serialPort[1].dataOut);
   pHProbe->sendSlopeRequest();
@@ -199,7 +233,7 @@ unittest(sendSlopeRequest) {
 
 // this test assumes that earlier tests have run and that there is a slope available
 unittest(getSlope) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   pHProbe->setPhSlope();
   char buffer[20];
@@ -211,7 +245,7 @@ unittest(getSlope) {
 }
 
 unittest(getPh) {
-  GodmodeState *state = GODMODE();
+  GodmodeState* state = GODMODE();
   state->reset();
   pHProbe->setPh(7.25);
   float pH = pHProbe->getPh();

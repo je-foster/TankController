@@ -79,7 +79,7 @@ void DataLogger::writeRemotePreambleToBuffer(const char severity) {
   int length = snprintf_P(buffer, sizeof(buffer), (PGM_P)format, VERSION, (uint16_t)tankId, severity,
                           (uint16_t)dtNow.year(), (uint16_t)dtNow.month(), (uint16_t)dtNow.day(),
                           (uint16_t)dtNow.hour(), (uint16_t)dtNow.minute(), (uint16_t)dtNow.second());
-  if ((length > sizeof(buffer)) || (length < 0)) {
+  if (((unsigned)length > sizeof(buffer)) || (length < 0)) {
     // TODO: Log a warning that string was truncated
     serial(F("WARNING! String was truncated to \"%s\""), buffer);
   }
@@ -183,7 +183,7 @@ void DataLogger::writeDataToRemoteLog() {
   int additionalLength =
       snprintf_P(buffer + preambleLength, sizeof(buffer) - preambleLength, (PGM_P)format, thermalTargetString,
                  thermalMeanString, thermalStandardDeviationString, pHTargetString, currentPhString, uptime);
-  if ((preambleLength + additionalLength > sizeof(buffer)) || (additionalLength < 0)) {
+  if (((unsigned)preambleLength + additionalLength > sizeof(buffer)) || (additionalLength < 0)) {
     // TODO: Log a warning that string was truncated
     serial(F("WARNING! String was truncated to \"%s\""), buffer);
   }

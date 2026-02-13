@@ -55,6 +55,10 @@ void PHProbe::getCalibration(char* buffer, int size) {
   strscpy(buffer, calibrationResponse, size);
 }
 
+void PHProbe::getCalibrationString(char* buffer, int size) {
+  strscpy(buffer, calibrationString, size);
+}
+
 void PHProbe::sendSlopeRequest() {
   // Sending request for Calibration Slope
   Serial1.print(F("SLOPE,?\r"));
@@ -64,6 +68,11 @@ void PHProbe::sendSlopeRequest() {
 void PHProbe::getSlope(char* buffer, int size) {
   // for example "99.7,100.3, -0.89" or "Requesting..."
   strscpy(buffer, slopeResponse, size);
+}
+
+void PHProbe::requestCalibrationString() {
+  receivingCalibrationString = true;
+  Serial1.print(F("Export\r"));
 }
 
 /**
@@ -78,7 +87,17 @@ void PHProbe::serialEvent1() {
       string.remove(string.length() - 1);
     }
     if (string.length() > 0) {
-      if (isdigit(string[0])) {  // if the first character in the string is a digit
+      if (receivingCalibrationString) {
+        if (string.length() >= 5 && memcmp_P(string.c_str(), F("*DONE"), 5) == 0) {
+          DataLogger::instance()->writeWarningSoon();
+          receivingCalibrationString = false;
+          Serial1.print(F("C,1\r"));  // Reset pH stamp to continuous measurement: once per second
+        } else {                      // append the received string to calibrationString
+          int writeIndex = strnlen(calibrationString, sizeof(calibrationString));
+          strscpy(calibrationString + writeIndex, string.c_str(), sizeof(calibrationString) - writeIndex);
+          this->requestCalibrationString();
+        }
+      } else if (isdigit(string[0])) {  // if the first character in the string is a digit
         // convert the string to a floating point number so it can be evaluated by the Arduino
         pHValue = string.toFloat();
         if (pHValue < 0) {
@@ -179,6 +198,12 @@ void PHProbe::setCalibration(int calibrationPoints) {
   GODMODE()->serialPort[1].dataIn = buffer;    // the queue of data waiting to be read
   TankController::instance()->serialEvent1();  // fake interrupt to update the calibration reading
   TankController::instance()->loop();          // update the controls based on the current readings
+}
+
+void PHProbe::sendCalibrationStringSegment(const char* segment) {
+  GODMODE()->serialPort[1].dataIn = String(segment);  // the queue of data waiting to be read
+  TankController::instance()->serialEvent1();         // fake interrupt to update the current pH reading
+  TankController::instance()->loop();                 // update the controls based on the current readings
 }
 
 void PHProbe::setPh(float newValue) {

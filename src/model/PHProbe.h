@@ -22,6 +22,7 @@ public:
   }
   void clearCalibration();
   void getCalibration(char* buffer, int size);
+  void getCalibrationString(char* buffer, int size);
   void getSlope(char* buffer, int size);
   void sendCalibrationRequest();
   void sendSlopeRequest();
@@ -38,19 +39,32 @@ public:
   const char* getCalibrationResponse() const {
     return calibrationResponse;
   }
+  bool getReceivingCalibrationString() {
+    return receivingCalibrationString;
+  }
   const char* getSlopeResponse() const {
     return slopeResponse;
   }
+  void resetCalibrationString() {
+    calibrationString[0] = '\0';
+  }
+  void sendCalibrationStringSegment(const char* segment);
   void setCalibration(int calibrationPoints = 0);
   void setPh(float newValue);
   void setPhSlope(const char* slope = "?SLOPE,99.7,100.3,-0.89\r");
+  void setReceivingCalibrationString(bool value) {
+    receivingCalibrationString = value;
+  }
 #endif
 private:
   // Class variable
   static PHProbe* _instance;
   // instance variable
-  float pHValue = 0;
   char calibrationResponse[17] = "";
+  char calibrationString[121] = "";
+  float pHValue = 0;
+  bool receivingCalibrationString = false;
+  void requestCalibrationString();
   char slopeResponse[32] = "";
   bool slopeIsOutOfRange = false;
   // Methods
