@@ -137,20 +137,17 @@ unittest(receiveCalibrationString) {
   for (int i = 0; i < 10; i++) {
     pHProbe->sendCalibrationStringSegment(segments[i].c_str());
     assertTrue(pHProbe->getReceivingCalibrationString());
-    // Also check that "Export\r" was sent to serial output
-    // The previous two lines are really testing requestCalibrationString()
+    assertEqual("Export\r", state->serialPort[1].dataOut);
+    state->serialPort[1].dataOut = "";
   }
   pHProbe->sendCalibrationStringSegment("*DONE");
   assertFalse(pHProbe->getReceivingCalibrationString());
-  // Also check that "C,1\r" was sent to serial output
+  assertEqual("C,1\r", state->serialPort[1].dataOut);
   pHProbe->getCalibrationString(buffer, sizeof(buffer));
   assertEqual(
       "596F7520617265206120636F3333333333334444444444445555555555556666666666667777777777778888888888889999999999996F6C"
       "20677579",
       buffer);
-}
-
-unittest(requestCalibrationString) {
 }
 
 unittest(setTemperatureCompensation) {

@@ -192,18 +192,18 @@ bool PHProbe::shouldWarnAboutCalibration() {
 
 #include "TankController.h"
 
+void PHProbe::sendCalibrationStringSegment(const char* segment) {
+  GODMODE()->serialPort[1].dataIn = String(segment);  // the queue of data waiting to be read
+  TankController::instance()->serialEvent1();         // fake interrupt to update the current pH reading
+  TankController::instance()->loop();                 // update the controls based on the current readings
+}
+
 void PHProbe::setCalibration(int calibrationPoints) {
   char buffer[10];
   snprintf_P(buffer, sizeof(buffer), (PGM_P)F("?CAL,%i\r"), calibrationPoints);
   GODMODE()->serialPort[1].dataIn = buffer;    // the queue of data waiting to be read
   TankController::instance()->serialEvent1();  // fake interrupt to update the calibration reading
   TankController::instance()->loop();          // update the controls based on the current readings
-}
-
-void PHProbe::sendCalibrationStringSegment(const char* segment) {
-  GODMODE()->serialPort[1].dataIn = String(segment);  // the queue of data waiting to be read
-  TankController::instance()->serialEvent1();         // fake interrupt to update the current pH reading
-  TankController::instance()->loop();                 // update the controls based on the current readings
 }
 
 void PHProbe::setPh(float newValue) {
