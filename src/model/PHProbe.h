@@ -39,7 +39,10 @@ public:
   const char* getCalibrationResponse() const {
     return calibrationResponse;
   }
-  bool getReceivingCalibrationString() {
+  void getCalibrationStringValue(char* buffer, int size) const {
+    strscpy(buffer, calibrationString, size);
+  }
+  bool getReceivingCalibrationString() const {
     return receivingCalibrationString;
   }
   const char* getSlopeResponse() const {
@@ -50,6 +53,10 @@ public:
   }
   void sendCalibrationStringSegment(const char* segment);
   void setCalibration(int calibrationPoints = 0);
+  void setCalibrationString(const char* value =
+                                "596F7520617265206120636F33333333333344444444444455555555555566666666666677777777777788"
+                                "88888888889999999999996F6C"
+                                "20677579");
   void setPh(float newValue);
   void setPhSlope(const char* slope = "?SLOPE,99.7,100.3,-0.89\r");
   void setReceivingCalibrationString(bool value) {

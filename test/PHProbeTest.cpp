@@ -80,17 +80,25 @@ unittest(clearCalibration) {
   GodmodeState* state = GODMODE();
   state->reset();
   eeprom->setIgnoreBadPHSlope(true);
+  pHProbe->setCalibrationString();
+  char buffer[121];
+
   assertTrue(eeprom->getIgnoreBadPHSlope());
   assertEqual("", state->serialPort[1].dataOut);
   pHProbe->clearCalibration();
   assertEqual("Cal,clear\r", state->serialPort[1].dataOut);
   assertFalse(eeprom->getIgnoreBadPHSlope());
   assertFalse(pHProbe->slopeIsBad());
+  // Check that the calibration string was erased
+  pHProbe->getCalibrationStringValue(buffer, sizeof(buffer));
+  assertEqual("", buffer);
 }
 
 unittest(clearBadCalibration) {
   GodmodeState* state = GODMODE();
   state->reset();
+  pHProbe->setCalibrationString();
+  char buffer[121];
   eeprom->setIgnoreBadPHSlope(true);
   assertTrue(eeprom->getIgnoreBadPHSlope());
   pHProbe->setPhSlope("?SLOPE,99.7,110.4,-0.89\r");
@@ -98,6 +106,9 @@ unittest(clearBadCalibration) {
   pHProbe->clearCalibration();
   assertFalse(eeprom->getIgnoreBadPHSlope());
   assertFalse(pHProbe->slopeIsBad());
+  // Check that the calibration string was erased
+  pHProbe->getCalibrationStringValue(buffer, sizeof(buffer));
+  assertEqual("", buffer);
 }
 
 unittest(sendCalibrationRequest) {
@@ -123,26 +134,36 @@ unittest(getCalibration) {
 }
 
 unittest(receiveCalibrationString) {
+  std::vector<std::string> segments = {"596F75206172\r", "65206120636F\r", "333333333333\r", "444444444444\r",
+                                       "555555555555\r", "666666666666\r", "777777777777\r", "888888888888\r",
+                                       "999999999999\r", "6F6C20677579\r"};
+
   GodmodeState* state = GODMODE();
   state->reset();
   assertEqual("", state->serialPort[1].dataOut);
   char buffer[121];
 
+  assertFalse(pHProbe->getReceivingCalibrationString());
+  // Asking for the calibration string will trigger a request to the EZO probe
   pHProbe->getCalibrationString(buffer, sizeof(buffer));
-  assertEqual("", buffer);
-  std::vector<std::string> segments = {"596F75206172\r", "65206120636F\r", "333333333333\r", "444444444444\r",
-                                       "555555555555\r", "666666666666\r", "777777777777\r", "888888888888\r",
-                                       "999999999999\r", "6F6C20677579\r"};
-  pHProbe->setReceivingCalibrationString(true);
+  assertEqual("Requesting...", buffer);
+  assertEqual("C,0\rExport\r", state->serialPort[1].dataOut);  // continuous measurement stopped
+  state->serialPort[1].dataOut = "";
+  bool stillReceiving = pHProbe->getReceivingCalibrationString();
+  // Simulate date being sent from the EZO probe
   for (int i = 0; i < 10; i++) {
     pHProbe->sendCalibrationStringSegment(segments[i].c_str());
-    assertTrue(pHProbe->getReceivingCalibrationString());
+    stillReceiving = stillReceiving && pHProbe->getReceivingCalibrationString();
     assertEqual("Export\r", state->serialPort[1].dataOut);
     state->serialPort[1].dataOut = "";
   }
-  pHProbe->sendCalibrationStringSegment("*DONE");
+  assertTrue(stillReceiving);  // stayed in receiving state for whole loop
+  pHProbe->getCalibrationString(buffer, sizeof(buffer));
+  assertEqual("Requesting...", buffer);  // calibration string is presumed to be incomplete
+  assertTrue(pHProbe->getReceivingCalibrationString());
+  pHProbe->sendCalibrationStringSegment("*DONE");  // EZO probe says it is done
   assertFalse(pHProbe->getReceivingCalibrationString());
-  assertEqual("C,1\r", state->serialPort[1].dataOut);
+  assertEqual("C,1\r", state->serialPort[1].dataOut);  // continuous measurement resumed
   pHProbe->getCalibrationString(buffer, sizeof(buffer));
   assertEqual(
       "596F7520617265206120636F3333333333334444444444445555555555556666666666667777777777778888888888889999999999996F6C"
@@ -167,6 +188,8 @@ unittest(setTemperatureCompensation) {
 unittest(setLowpointCalibration) {
   GodmodeState* state = GODMODE();
   state->reset();
+  pHProbe->setCalibrationString();
+  char buffer[121];
   // TODO: the following two lines are commented out in another branch
   eeprom->setIgnoreBadPHSlope(true);
   assertTrue(eeprom->getIgnoreBadPHSlope());
@@ -175,11 +198,16 @@ unittest(setLowpointCalibration) {
   assertEqual("Cal,low,10.875\r", state->serialPort[1].dataOut);
   // TODO: the following line is commented out in another branch
   assertFalse(eeprom->getIgnoreBadPHSlope());
+  // Check that the calibration string was erased
+  pHProbe->getCalibrationStringValue(buffer, sizeof(buffer));
+  assertEqual("", buffer);
 }
 
 unittest(setMidpointCalibration) {
   GodmodeState* state = GODMODE();
   state->reset();
+  pHProbe->setCalibrationString();
+  char buffer[121];
   DataLogger::instance()->reset();
   assertFalse(DataLogger::instance()->getShouldWriteWarning());
   eeprom->setIgnoreBadPHSlope(true);
@@ -192,11 +220,16 @@ unittest(setMidpointCalibration) {
   assertTrue(DataLogger::instance()->getShouldWriteWarning());
   assertEqual("Cal,mid,11.875\r", state->serialPort[1].dataOut);
   assertFalse(eeprom->getIgnoreBadPHSlope());
+  // Check that the calibration string was erased
+  pHProbe->getCalibrationStringValue(buffer, sizeof(buffer));
+  assertEqual("", buffer);
 }
 
 unittest(settingMidpointClearsBadCalibration) {
   GodmodeState* state = GODMODE();
   state->reset();
+  pHProbe->setCalibrationString();
+  char buffer[121];
   eeprom->setIgnoreBadPHSlope(true);
   assertTrue(eeprom->getIgnoreBadPHSlope());
   pHProbe->setPhSlope("?SLOPE,-2.7,100.0,-0.50\r");
@@ -204,11 +237,16 @@ unittest(settingMidpointClearsBadCalibration) {
   pHProbe->setMidpointCalibration(11.875);
   assertFalse(eeprom->getIgnoreBadPHSlope());
   assertFalse(pHProbe->slopeIsBad());
+  // Check that the calibration string was erased
+  pHProbe->getCalibrationStringValue(buffer, sizeof(buffer));
+  assertEqual("", buffer);
 }
 
 unittest(setHighpointCalibration) {
   GodmodeState* state = GODMODE();
   state->reset();
+  pHProbe->setCalibrationString();
+  char buffer[121];
   // TODO: the following two lines are commented out in another branch
   eeprom->setIgnoreBadPHSlope(true);
   assertTrue(eeprom->getIgnoreBadPHSlope());
@@ -217,6 +255,9 @@ unittest(setHighpointCalibration) {
   assertEqual("Cal,High,12.875\r", state->serialPort[1].dataOut);
   // TODO: the following line is commented out in another branch
   assertFalse(eeprom->getIgnoreBadPHSlope());
+  // Check that the calibration string was erased
+  pHProbe->getCalibrationStringValue(buffer, sizeof(buffer));
+  assertEqual("", buffer);
 }
 
 unittest(sendSlopeRequest) {
