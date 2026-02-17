@@ -13,12 +13,12 @@
 #include "ThermalProbe_TC.h"
 #include "UIState/PHCalibrationMid.h"
 
-EthernetClient *pClient;
-GodmodeState *state = GODMODE();
-PushingBox *pPushingBox;
-TankController *tc;
-ThermalProbe_TC *thermalProbe;
-PHControl *controlSolenoid;
+EthernetClient* pClient;
+GodmodeState* state = GODMODE();
+PushingBox* pPushingBox;
+TankController* tc;
+ThermalProbe_TC* thermalProbe;
+PHControl* controlSolenoid;
 
 unittest_setup() {
   state->reset();
@@ -54,9 +54,11 @@ unittest(NoTankID) {
   delay(30 * 1000);  // allow 30 seconds for time update
   tc->loop();
   tc->loop();
-  delay(20 * 1000);  // allow 50 seconds (30 + 40) for RemoteLogPusher update
+  delay(20 * 1000);  // allow 50 seconds (30 + 20) for RemoteLogPusher update
   tc->loop();        // Trigger SD logging and Serial (DataLogger)
-  delay(20 * 1000);  // allow 70 seconds (30 + 20 + 20) for PushingBox update
+  delay(10 * 1000);  // allow 60 seconds (30 + 20 + 10) for PHProbe update
+  tc->loop();        // Trigger temperature compensation adjustment (PHProbe)
+  delay(10 * 1000);  // allow 70 seconds (30 + 20 + 20) for PushingBox update
   Serial_TC::instance()->clearBuffer();
   tc->loop();  // Trigger PushingBox
   auto expected = "Set Tank ID in order to send data to PushingBox";
@@ -69,7 +71,7 @@ unittest(SendData) {
   thermalProbe->setTemperature(20.25, true);
   PHProbe::instance()->setPh(7.125);
   EthernetClient::startMockServer(pPushingBox->getServerDomain(), (uint32_t)0, 80,
-                                  (const uint8_t *)"[PushingBox response]\r\n");
+                                  (const uint8_t*)"[PushingBox response]\r\n");
   assertFalse(pClient->connected());  // not yet connected!
   delay(60 * 1000);                   // allow for time update
   tc->loop();
@@ -88,7 +90,7 @@ unittest(SendData) {
 
 unittest(inCalibration) {
   EEPROM_TC::instance()->setTankID(99);
-  PHCalibrationMid *test = new PHCalibrationMid();
+  PHCalibrationMid* test = new PHCalibrationMid();
   tc->setNextState(test, true);
   assertTrue(tc->isInCalibration());
   EthernetClient::startMockServer(pPushingBox->getServerDomain(), (uint32_t)0, 80);

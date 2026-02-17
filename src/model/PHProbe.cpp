@@ -3,22 +3,24 @@
 #include <avr/wdt.h>
 #include <stdlib.h>
 
+#include "TankController.h"
 #include "model/DataLogger.h"
 #include "model/TC_util.h"
 #include "wrappers/EEPROM_TC.h"
 #include "wrappers/Serial_TC.h"
+#include "wrappers/ThermalProbe_TC.h"
 
 //  class instance variables
 /**
  * static variable for singleton
  */
-PHProbe *PHProbe::_instance = nullptr;
+PHProbe* PHProbe::_instance = nullptr;
 
 //  class methods
 /**
  * static member function to return singleton
  */
-PHProbe *PHProbe::instance() {
+PHProbe* PHProbe::instance() {
   if (!_instance) {
     _instance = new PHProbe();
   }
@@ -39,6 +41,16 @@ PHProbe::PHProbe() {
   sendSlopeRequest();
 }
 
+void PHProbe::loop() {
+  unsigned long msNow = millis();
+  if (msNow >= nextThermalCompensationTime) {
+    if (!TankController::instance()->isInCalibration()) {  // skip if in calibration
+      setThermalCompensation(ThermalProbe_TC::instance()->getRunningAverage());
+    }
+    nextThermalCompensationTime = (msNow / THERMAL_COMPENSATION_INTERVAL + 1) * THERMAL_COMPENSATION_INTERVAL;
+  }
+}
+
 void PHProbe::clearCalibration() {
   slopeIsOutOfRange = false;
   EEPROM_TC::instance()->setIgnoreBadPHSlope(false);
@@ -51,7 +63,7 @@ void PHProbe::sendCalibrationRequest() {
   strscpy_P(calibrationResponse, F("PH Calibration"), sizeof(calibrationResponse));
 }
 
-void PHProbe::getCalibration(char *buffer, int size) {
+void PHProbe::getCalibration(char* buffer, int size) {
   strscpy(buffer, calibrationResponse, size);
 }
 
@@ -61,7 +73,7 @@ void PHProbe::sendSlopeRequest() {
   strscpy_P(slopeResponse, F("Requesting..."), sizeof(slopeResponse));
 }
 
-void PHProbe::getSlope(char *buffer, int size) {
+void PHProbe::getSlope(char* buffer, int size) {
   // for example "99.7,100.3, -0.89" or "Requesting..."
   strscpy(buffer, slopeResponse, size);
 }
@@ -119,14 +131,14 @@ void PHProbe::serialEvent1() {
 // "pH decreases with increase in temperature. But this does not mean that
 //  water becomes more acidic at higher temperatures."
 // https://www.westlab.com/blog/2017/11/15/how-does-temperature-affect-ph
-void PHProbe::setTemperatureCompensation(float temperature) {
+void PHProbe::setThermalCompensation(float temperature) {
   char buffer[10];
   if (temperature > 0 && temperature < 100) {
     snprintf_P(buffer, sizeof(buffer), (PGM_P)F("T,%i.%02i\r"), (int)temperature, (int)(temperature * 100 + 0.5) % 100);
   } else {
     snprintf_P(buffer, sizeof(buffer), (PGM_P)F("T,20\r"));
   }
-  serial(F("PHProbe::setTemperatureCompensation() - %s"), buffer);
+  serial(F("PHProbe::setThermalCompensation() - %s"), buffer);
   Serial1.print(buffer);  // send that string to the Atlas Scientific product
 }
 
@@ -189,7 +201,7 @@ void PHProbe::setPh(float newValue) {
   TankController::instance()->loop();          // update the controls based on the current readings
 }
 
-void PHProbe::setPhSlope(const char *slope) {
+void PHProbe::setPhSlope(const char* slope) {
   GODMODE()->serialPort[1].dataIn = String(slope);  // the queue of data waiting to be read
   TankController::instance()->serialEvent1();       // fake interrupt to update the current pH reading
   TankController::instance()->loop();               // update the controls based on the current readings

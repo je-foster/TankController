@@ -31,12 +31,12 @@ const char TANK_CONTROLLER_VERSION[] = VERSION;
 /**
  * static variable to hold singleton
  */
-TankController *TankController::_instance = nullptr;
+TankController* TankController::_instance = nullptr;
 
 /**
  * static function to return singleton
  */
-TankController *TankController::instance(const char *remoteLogName, const char *pushingBoxID, int tzOffsetHrs) {
+TankController* TankController::instance(const char* remoteLogName, const char* pushingBoxID, int tzOffsetHrs) {
   if (!_instance) {
     serial(F("\r\n##############\r\nTankController %s"), TANK_CONTROLLER_VERSION);
     _instance = new TankController();
@@ -114,7 +114,7 @@ int TankController::freeMemory() {
 #if defined(ARDUINO_CI_COMPILATION_MOCKS)
   return 1024;
 #else
-  extern char *__brkval;
+  extern char* __brkval;
   int topOfStack;
 
   return (int)((size_t)&topOfStack) - ((size_t)__brkval);
@@ -146,7 +146,7 @@ void TankController::handleUI() {
       // we already have a next state teed-up, do don't try to return to main menu
     } else if (millis() - lastKeypadTime > IDLE_TIMEOUT) {
       // time since last keypress exceeds the idle timeout, so return to main menu
-      setNextState((UIState *)new MainMenu());
+      setNextState((UIState*)new MainMenu());
       lastKeypadTime = 0;  // so we don't do this until another keypress!
     }
   } else {
@@ -185,6 +185,7 @@ void TankController::loop(bool report_loop_delay) {
   PushingBox::instance()->loop();         // write data to Google Sheets (~0ms; ~1130ms every report)
   Ethernet_TC::instance()->loop();        // renew DHCP lease (~0ms)
   EthernetServer_TC::instance()->loop();  // handle any HTTP requests (~0ms)
+  PHProbe::instance()->loop();            // adjust temperature compensation
   if (report_loop_delay) {
     unsigned long currentLoopTime = millis() - currentLoopStart;
     if (currentLoopTime > 500) {  // first time through and periodically thereafter
@@ -211,7 +212,7 @@ void TankController::serialEvent1() {
 /**
  * Set the next state
  */
-void TankController::setNextState(UIState *newState, bool update) {
+void TankController::setNextState(UIState* newState, bool update) {
   assert(nextState == nullptr);
   nextState = newState;
   if (update) {
@@ -231,7 +232,7 @@ void TankController::setup() {
  * Public member function used to get the current state name.
  * This is primarily used by testing.
  */
-const __FlashStringHelper *TankController::stateName() {
+const __FlashStringHelper* TankController::stateName() {
   return state->name();
 }
 
@@ -262,13 +263,13 @@ void TankController::updateState() {
 /**
  * What is the current version?
  */
-const char *TankController::version() {
+const char* TankController::version() {
   return TANK_CONTROLLER_VERSION;
 }
 
 #if defined(__CYGWIN__)
-size_t strnlen(const char *s, size_t n) {
-  void *found = memchr(s, '\0', n);
-  return found ? (size_t)((char *)found - s) : n;
+size_t strnlen(const char* s, size_t n) {
+  void* found = memchr(s, '\0', n);
+  return found ? (size_t)((char*)found - s) : n;
 }
 #endif

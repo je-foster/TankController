@@ -13,23 +13,26 @@
  * Similarly, "Cal,?" is actually "CAL,?" and responses are "?CAL,2" for example.
  */
 
-// getValue() function is for testing purposes
+const uint32_t THERMAL_COMPENSATION_INTERVAL = 60000;  // 1 min
+
 class PHProbe {
 public:
   static PHProbe* instance();
+
   float getPh() {
     return value;
   }
   void clearCalibration();
   void getCalibration(char* buffer, int size);
   void getSlope(char* buffer, int size);
+  void loop();
   void sendCalibrationRequest();
   void sendSlopeRequest();
   void serialEvent1();
   void setHighpointCalibration(float highpoint);
   void setLowpointCalibration(float lowpoint);
   void setMidpointCalibration(float midpoint);
-  void setTemperatureCompensation(float temperature);
+  void setThermalCompensation(float temperature);
   bool shouldWarnAboutCalibration();
   bool slopeIsBad() {
     return slopeIsOutOfRange;
@@ -50,6 +53,7 @@ private:
   static PHProbe* _instance;
   // instance variable
   float value = 0;
+  uint32_t nextThermalCompensationTime = THERMAL_COMPENSATION_INTERVAL;
   char calibrationResponse[17] = "";
   char slopeResponse[32] = "";
   bool slopeIsOutOfRange = false;
