@@ -39,9 +39,7 @@ public:
   const char* getCalibrationResponse() const {
     return calibrationResponse;
   }
-  void getCalibrationStringValue(char* buffer, int size) const {
-    strscpy(buffer, calibrationString, size);
-  }
+  void getCalibrationStringValue(char* buffer, int size) const;
   bool getReceivingCalibrationString() const {
     return receivingCalibrationString;
   }

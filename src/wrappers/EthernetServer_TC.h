@@ -69,6 +69,7 @@ private:
   EthernetServer_TC(uint16_t port);
 
   // other instance methods
+  void calibrationExport();
   void currentData();
   void display();
   void echo();

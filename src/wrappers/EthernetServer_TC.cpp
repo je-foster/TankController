@@ -7,6 +7,7 @@
 #include "favicon.h"
 #include "model/JSONBuilder.h"
 #include "model/PHControl.h"
+#include "model/PHProbe.h"
 #include "model/ThermalControl.h"
 #include "wrappers/DateTime_TC.h"
 #include "wrappers/Ethernet_TC.h"
@@ -17,13 +18,13 @@
 #define BUFFER_SIZE 200
 
 //  class variables
-EthernetServer_TC *EthernetServer_TC::_instance = nullptr;
+EthernetServer_TC* EthernetServer_TC::_instance = nullptr;
 
 //  class methods
 /**
  * accessor for singleton
  */
-EthernetServer_TC *EthernetServer_TC::instance() {
+EthernetServer_TC* EthernetServer_TC::instance() {
   if (!_instance) {
     _instance = new EthernetServer_TC(80);
   }
@@ -38,7 +39,7 @@ EthernetServer_TC::EthernetServer_TC(uint16_t port) : EthernetServer(port) {
   begin();
   IPAddress IP = Ethernet_TC::instance()->getIP();
   serial(F("Ethernet Server is listening on %i.%i.%i.%i:80"), IP[0], IP[1], IP[2], IP[3]);
-  const __FlashStringHelper *boundary_P = F("boundary");
+  const __FlashStringHelper* boundary_P = F("boundary");
   // TODO: A long string of apparently random characters should be used as the boundary instead,
   // because they would be less likely to be part of the message
   strscpy_P(boundary, boundary_P, sizeof(boundary));
@@ -102,7 +103,7 @@ void EthernetServer_TC::getFavIcon() {
 
 // Handles an HTTP OPTIONS request
 void EthernetServer_TC::options() {
-  const __FlashStringHelper *response =
+  const __FlashStringHelper* response =
       F("HTTP/1.1 200 OK\r\n"
         "Content-Type: text/plain;charset=UTF-8\r\n"
         "Content-Encoding: identity\r\n"
@@ -332,6 +333,8 @@ void EthernetServer_TC::getApiHandler() {
       testReadSpeed();
     } else if (memcmp_P(buffer + 11, F("testWrite"), 9) == 0) {
       testWriteSpeed();
+    } else if (memcmp_P(buffer + 11, F("calibration"), 11) == 0) {
+      calibrationExport();
     } else {
       // Unimplemented in API 1
       serial(F("Request unimplemented in API 1"));
@@ -346,11 +349,24 @@ void EthernetServer_TC::getApiHandler() {
   }
 }
 
+// Get calibration string from EZO pH probe
+void EthernetServer_TC::calibrationExport() {
+  char calibrationString[121];
+  PHProbe::instance()->getCalibrationString(calibrationString, sizeof(calibrationString));
+  // First send headers
+  sendHeadersWithSize(strnlen(calibrationString, sizeof(calibrationString)) + 2);
+  // get currently displayed lines
+  client.write(calibrationString);
+  client.write('\r');
+  client.write('\n');
+  state = FINISHED;
+}
+
 // Get list of current values
 void EthernetServer_TC::currentData() {
   JSONBuilder builder;
   int size = builder.buildCurrentValues();
-  char *text = builder.bufferPtr();
+  char* text = builder.bufferPtr();
   // First send headers
   sendHeadersWithSize(size);
   // Write JSON file to client (will be null-terminated)
@@ -395,7 +411,7 @@ void EthernetServer_TC::keypress() {
 }
 
 // Non-member callback wrapper for singleton
-void writeToClientBufferCallback(const char *buffer, bool isFinished) {
+void writeToClientBufferCallback(const char* buffer, bool isFinished) {
   // The boolean value in the callback is true when the process is complete
   EthernetServer_TC::instance()->writeToClientBuffer(buffer, isFinished);
 }
@@ -437,7 +453,7 @@ void EthernetServer_TC::rootdir() {
 }
 
 // Write to the client buffer
-void EthernetServer_TC::writeToClientBuffer(const char *buffer, bool isFinished) {
+void EthernetServer_TC::writeToClientBuffer(const char* buffer, bool isFinished) {
   // Write to client and return (ASSUME NULL-TERMINATED)
   client.write(buffer);
   if (isFinished) {
@@ -463,7 +479,7 @@ void EthernetServer_TC::sendHeadersForRootdir(int fileCount) {
 // Empirical results show about 1.28 ms per 512 B
 void EthernetServer_TC::testReadSpeed() {
   wdt_disable();
-  const __FlashStringHelper *path = F("tstRdSpd.txt");
+  const __FlashStringHelper* path = F("tstRdSpd.txt");
   char temp[15];
   strscpy_P(temp, path, sizeof(temp));
   // Create the file and write garbage
@@ -646,7 +662,7 @@ void EthernetServer_TC::loop() {
 
 // 200 response with a content size
 void EthernetServer_TC::sendHeadersWithSize(uint32_t size) {
-  const __FlashStringHelper *response =
+  const __FlashStringHelper* response =
       F("HTTP/1.1 200 OK\r\n"
         "Content-Type: text/plain;charset=UTF-8\r\n"
         "Content-Encoding: identity\r\n"
@@ -674,7 +690,7 @@ void EthernetServer_TC::sendHeadersWithSize(uint32_t size) {
 
 // 200 response with a content size
 void EthernetServer_TC::sendIconHeadersWithSize(uint32_t size) {
-  const __FlashStringHelper *response =
+  const __FlashStringHelper* response =
       F("HTTP/1.1 200 OK\r\n"
         "Content-Type: image/x-icon\r\n"
         "Access-Control-Allow-Origin: *\r\n");
@@ -692,7 +708,7 @@ void EthernetServer_TC::sendIconHeadersWithSize(uint32_t size) {
 }
 
 void EthernetServer_TC::sendCurrentRedirect() {
-  const __FlashStringHelper *response_303 =
+  const __FlashStringHelper* response_303 =
       F("HTTP/1.1 303 See Other\r\n"
         "Location: /api/1/data\r\n"
         "Access-Control-Allow-Origin: *\r\n"
@@ -702,7 +718,7 @@ void EthernetServer_TC::sendCurrentRedirect() {
 }
 
 void EthernetServer_TC::sendDisplayRedirect() {
-  const __FlashStringHelper *response_303 =
+  const __FlashStringHelper* response_303 =
       F("HTTP/1.1 303 See Other\r\n"
         "Location: /api/1/display\r\n"
         "Access-Control-Allow-Origin: *\r\n"
@@ -712,7 +728,7 @@ void EthernetServer_TC::sendDisplayRedirect() {
 }
 
 void EthernetServer_TC::sendHomeRedirect() {
-  const __FlashStringHelper *response_303 =
+  const __FlashStringHelper* response_303 =
       F("HTTP/1.1 303 See Other\r\n"
         "Location: http://oap.cs.wallawalla.edu/\r\n"
         "Access-Control-Allow-Origin: *\r\n"
@@ -722,24 +738,24 @@ void EthernetServer_TC::sendHomeRedirect() {
 }
 
 void EthernetServer_TC::sendResponse(int code) {
-  const __FlashStringHelper *response_400 =
+  const __FlashStringHelper* response_400 =
       F("HTTP/1.1 400 Bad Request\r\n"
         "\r\n");
-  const __FlashStringHelper *response_404 =
+  const __FlashStringHelper* response_404 =
       F("HTTP/1.1 404 Not Found\r\n"
         "\r\n");
-  const __FlashStringHelper *response_405 =
+  const __FlashStringHelper* response_405 =
       F("HTTP/1.1 405 Method Not Allowed\r\n"
         "Allow: GET, POST\r\n"
         "\r\n");
-  const __FlashStringHelper *response_408 =
+  const __FlashStringHelper* response_408 =
       F("HTTP/1.1 408 Request Timeout\r\n"
         "Connection: close\r\n"
         "\r\n");
-  const __FlashStringHelper *response_500 =
+  const __FlashStringHelper* response_500 =
       F("HTTP/1.1 500 Internal Server Error\r\n"
         "\r\n");
-  const __FlashStringHelper *response_501 =
+  const __FlashStringHelper* response_501 =
       F("HTTP/1.1 501 Not Implemented\r\n"
         "\r\n");
   char buffer[100];  // Space for longest of above responses

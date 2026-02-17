@@ -255,6 +255,47 @@ unittest(currentData) {
   server->loop();
 }
 
+unittest(calibrationExport) {
+  EthernetServer_TC* server = EthernetServer_TC::instance();
+  server->setHasClientCalling(true);
+  delay(1);
+  server->loop();
+  EthernetClient_CI client = server->getClient();
+  TankController* tc = TankController::instance();
+  tc->loop();  // for main menu to idle
+  const char request[] =
+      "GET /api/1/calibration HTTP/1.1\r\n"
+      "Host: localhost:80\r\n"
+      "Accept: text/plain;charset=UTF-8\r\n"
+      "Accept-Encoding: identity\r\n"
+      "Accept-Language: en-US\r\n"
+      "\r\n";
+  client.pushToReadBuffer(request);
+  tc->loop();  // for targets to take effect
+  deque<uint8_t>* pBuffer = client.writeBuffer();
+  assertTrue(pBuffer->size() > 100);
+  String response;
+  while (!pBuffer->empty()) {
+    response.concat(pBuffer->front());
+    pBuffer->pop_front();
+  }
+  const char expectedResponse[] =
+      "HTTP/1.1 200 OK\r\n"
+      "Content-Type: text/plain;charset=UTF-8\r\n"
+      "Content-Encoding: identity\r\n"
+      "Content-Language: en-US\r\n"
+      "Access-Control-Allow-Origin: *\r\n"
+      "Content-Length: 15\r\n"
+      "\r\n"
+      "Requesting...\r\n";
+  assertEqual(expectedResponse, response);
+  assertEqual(FINISHED, server->getState());
+  server->loop();  // Process finished state
+  assertEqual(NOT_CONNECTED, server->getState());
+  client.stop();
+  server->loop();
+}
+
 unittest(badRequest) {
   TankController* tc = TankController::instance();
   EthernetServer_TC* server = EthernetServer_TC::instance();
