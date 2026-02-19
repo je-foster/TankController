@@ -85,7 +85,7 @@ void PHProbe::getSlope(char* buffer, int size) {
 
 void PHProbe::requestCalibrationString() {
   receivingCalibrationString = true;
-  Serial1.print(F("Export\r"));
+  Serial1.print(F("EXPORT\r"));
 }
 
 /**
