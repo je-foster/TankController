@@ -9,20 +9,29 @@
  * Issuing the "Cal,mid,n\r" command will
  * clear the other calibration points.
  *
- * While the data sheet uses "Slope" the actual string is "SLOPE"
- * Similarly, "Cal,?" is actually "CAL,?" and responses are "?CAL,2" for example.
+ * The datasheet often uses lowercase when uppercase is required.
+ * For example "Slope,?" should be "SLOPE,?" and so on.
  */
 
-// getValue() function is for testing purposes
+enum pHProbeState {
+  BOOT,                 // booting (continuous read disabled)
+  CONTINUOUS_READ,      // reporting pH values every second
+  CALIBRATION,          // being calibrated (continuous read disabled)
+  EXPORT_CALIBRATION,   // exporting its calibration (continuous read disabled)
+  IMPORT_CALIBRATION,   // importing a calibration (continuous read disabled)
+  SLOPE,                // reporting its slope (continuous read active)
+  THERMAL_COMPENSATION  // importing a temperature (continuous read active)
+};
+
 class PHProbe {
 public:
   static PHProbe* instance();
+  void clearCalibration();
+  void getCalibrationStatus(char* buffer, int size);
+  void getCalibrationString(char* buffer, int size);
   float getPh() {
     return pHValue;
   }
-  void clearCalibration();
-  void getCalibration(char* buffer, int size);
-  void getCalibrationString(char* buffer, int size);
   void getSlope(char* buffer, int size);
   void sendCalibrationRequest();
   void sendSlopeRequest();
@@ -36,8 +45,8 @@ public:
     return slopeIsOutOfRange;
   }
 #if defined(ARDUINO_CI_COMPILATION_MOCKS)
-  const char* getCalibrationResponse() const {
-    return calibrationResponse;
+  const char* getCalibrationStatus() const {
+    return calibrationStatus;
   }
   void getCalibrationStringValue(char* buffer, int size) const;
   bool getReceivingCalibrationString() const {
@@ -45,6 +54,12 @@ public:
   }
   const char* getSlopeResponse() const {
     return slopeResponse;
+  }
+  pHProbeState getState() {
+    return state;
+  }
+  bool getContinuousReadActive() {
+    return continuousReadActive;
   }
   void resetCalibrationString() {
     calibrationString[0] = '\0';
@@ -60,18 +75,23 @@ public:
   void setReceivingCalibrationString(bool value) {
     receivingCalibrationString = value;
   }
+  void setState(pHProbeState newState) {
+    state = newState;
+  }
 #endif
 private:
   // Class variable
   static PHProbe* _instance;
   // instance variable
-  char calibrationResponse[17] = "";
+  char calibrationStatus[17] = "";  // 0-point, 1-point, 2-point, or 3-point
   char calibrationString[121] = "";
   float pHValue = 0;
   bool receivingCalibrationString = false;
-  void requestCalibrationString();
   char slopeResponse[32] = "";
   bool slopeIsOutOfRange = false;
+  pHProbeState state = BOOT;
+  bool continuousReadActive = false;
   // Methods
   PHProbe();
+  void requestCalibrationString();
 };

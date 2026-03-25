@@ -35,7 +35,7 @@ unittest(serialEvent1) {
   state->reset();
   assertEqual("", state->serialPort[1].dataOut);
   tc->serialEvent1();  // fake interrupt
-  assertEqual("", pHProbe->getCalibrationResponse());
+  assertEqual("", pHProbe->getCalibrationStatus());
   assertEqual(0, pHProbe->getPh());
   assertEqual("Requesting...", pHProbe->getSlopeResponse());
   pHProbe->setCalibration(2);
@@ -47,7 +47,7 @@ unittest(serialEvent1) {
   assertFalse(dl->getShouldWriteWarning());  // already false again
   string lastWrittenString(dl->getBuffer());
   assertTrue(lastWrittenString.find("99.7,100.3,-0.89") > 0);  // warning was sent
-  assertEqual("PH Calibra: 2 pt", pHProbe->getCalibrationResponse());
+  assertEqual("PH Calibra: 2 pt", pHProbe->getCalibrationStatus());
   assertEqual(7.125, pHProbe->getPh());
   assertEqual("99.7,100.3,-0.89", pHProbe->getSlopeResponse());
 }
@@ -117,7 +117,7 @@ unittest(sendCalibrationRequest) {
   assertEqual("", state->serialPort[1].dataOut);
   pHProbe->sendCalibrationRequest();
   assertEqual("CAL,?\r", state->serialPort[1].dataOut);
-  assertEqual("PH Calibration", pHProbe->getCalibrationResponse());
+  assertEqual("PH Calibration", pHProbe->getCalibrationStatus());
 }
 
 unittest(getCalibration) {
@@ -126,10 +126,10 @@ unittest(getCalibration) {
   assertEqual("", state->serialPort[1].dataOut);
   char buffer[17];
   pHProbe->setCalibration(0);
-  pHProbe->getCalibration(buffer, sizeof(buffer));
+  pHProbe->getCalibrationStatus(buffer, sizeof(buffer));
   assertEqual("PH Calibra: 0 pt", buffer);
   pHProbe->setCalibration(3);
-  pHProbe->getCalibration(buffer, sizeof(buffer));
+  pHProbe->getCalibrationStatus(buffer, sizeof(buffer));
   assertEqual("PH Calibra: 3 pt", buffer);
 }
 

@@ -19,7 +19,7 @@ SeePHCalibration::SeePHCalibration(bool inCalibration) : UIState() {
 void SeePHCalibration::loop() {
   char pointsBuffer[20];
   char slopeBuffer[20];
-  PHProbe::instance()->getCalibration(pointsBuffer, sizeof(pointsBuffer));
+  PHProbe::instance()->getCalibrationStatus(pointsBuffer, sizeof(pointsBuffer));
   PHProbe::instance()->getSlope(slopeBuffer, sizeof(slopeBuffer));
   LiquidCrystal_TC::instance()->writeLine(pointsBuffer, 0);
   LiquidCrystal_TC::instance()->writeLine(slopeBuffer, 1);

@@ -16,7 +16,8 @@ PHProbe* PHProbe::_instance = nullptr;
 
 //  class methods
 /**
- * static member function to return singleton
+ * @brief static member function to return singleton
+ *
  */
 PHProbe* PHProbe::instance() {
   if (!_instance) {
@@ -27,33 +28,50 @@ PHProbe* PHProbe::instance() {
 
 //  instance methods
 /**
- * constructor (private so clients use the singleton)
+ * @brief constructor (private so clients use the singleton)
+ *
  */
 PHProbe::PHProbe() {
   Serial1.begin(9600);
   // wait for Serial Monitor to connect. Needed for native USB port boards only:
   while (!Serial1)
     ;
-  Serial1.print(F("*OK,0\r"));  // Turn off the returning of OK after command to EZO pH
-  Serial1.print(F("C,1\r"));    // Reset pH stamp to continuous measurement: once per second
-  sendSlopeRequest();
+  // Serial1.print(F("*OK,0\r"));  // Turn off the returning of OK after command to EZO pH
+  // Serial1.print(F("C,1\r"));    // Reset pH stamp to continuous measurement: once per second
+  // sendSlopeRequest();
 }
 
+/**
+ * @brief Reset EZO calibration to default
+ *
+ */
 void PHProbe::clearCalibration() {
-  slopeIsOutOfRange = false;
-  EEPROM_TC::instance()->setIgnoreBadPHSlope(false);
-  Serial1.print(F("Cal,clear\r"));  // send that string to the Atlas Scientific product
+  state = CALIBRATION;
+  slopeIsOutOfRange = false;                          // Clear warnings about current calibration
+  EEPROM_TC::instance()->setIgnoreBadPHSlope(false);  // Watch for new bad calibrations
+  Serial1.print(F("Cal,clear\r"));
   calibrationString[0] = '\0';
+  waitingForConfirmation = true;
 }
 
+/**
+ * @brief Ask the EZO probe for its calibration status (single point, three point, etc.)
+ *
+ */
 void PHProbe::sendCalibrationRequest() {
-  // Sending request for calibration status
   Serial1.print(F("CAL,?\r"));
-  strscpy_P(calibrationResponse, F("PH Calibration"), sizeof(calibrationResponse));
+  // The new status message will show on the display until the request is answered
+  strscpy_P(calibrationStatus, F("PH Calibration"), sizeof(calibrationStatus));
 }
 
-void PHProbe::getCalibration(char* buffer, int size) {
-  strscpy(buffer, calibrationResponse, size);
+/**
+ * @brief Put the current calibration status message into buffer
+ *
+ * @param buffer
+ * @param size
+ */
+void PHProbe::getCalibrationStatus(char* buffer, int size) {
+  strscpy(buffer, calibrationStatus, size);
 }
 
 void PHProbe::getCalibrationString(char* buffer, int size) {
@@ -72,17 +90,30 @@ void PHProbe::getCalibrationString(char* buffer, int size) {
   }
 }
 
+/**
+ * @brief Ask the EZO probe for its slope
+ *
+ */
 void PHProbe::sendSlopeRequest() {
-  // Sending request for Calibration Slope
   Serial1.print(F("SLOPE,?\r"));
+  // The new status message will show on the display until the request is answered
   strscpy_P(slopeResponse, F("Requesting..."), sizeof(slopeResponse));
 }
 
+/**
+ * @brief Put the latest slope data into buffer. Could be "99.7,100.3, -0.89" or "Requesting..."
+ *
+ * @param buffer
+ * @param size
+ */
 void PHProbe::getSlope(char* buffer, int size) {
-  // for example "99.7,100.3, -0.89" or "Requesting..."
   strscpy(buffer, slopeResponse, size);
 }
 
+/**
+ * @brief Ask the EZO probe to export its calibration string
+ *
+ */
 void PHProbe::requestCalibrationString() {
   receivingCalibrationString = true;
   Serial1.print(F("EXPORT\r"));
@@ -100,6 +131,10 @@ void PHProbe::serialEvent1() {
       string.remove(string.length() - 1);
     }
     if (string.length() > 0) {
+      // switch (state) {
+
+      // }
+
       if (receivingCalibrationString) {
         if (string.length() >= 5 && memcmp_P(string.c_str(), F("*DONE"), 5) == 0) {
           DataLogger::instance()->writeWarningSoon();
@@ -141,7 +176,7 @@ void PHProbe::serialEvent1() {
           // TankController::instance()->checkPhSlope();
         } else if (string.length() > 5 && memcmp_P(string.c_str(), F("?CAL,"), 5) == 0) {
           // for example "?CAL,2"
-          snprintf_P(calibrationResponse, sizeof(calibrationResponse), PSTR("PH Calibra: %s pt"), string.c_str() + 5);
+          snprintf_P(calibrationStatus, sizeof(calibrationStatus), PSTR("PH Calibra: %s pt"), string.c_str() + 5);
         }
       }
     }
@@ -214,7 +249,7 @@ void PHProbe::getCalibrationStringValue(char* buffer, int size) const {
 
 void PHProbe::sendCalibrationStringSegment(const char* segment) {
   GODMODE()->serialPort[1].dataIn = String(segment);  // the queue of data waiting to be read
-  TankController::instance()->serialEvent1();         // fake interrupt to update the current pH reading
+  TankController::instance()->serialEvent1();         // fake interrupt to read the segment
   TankController::instance()->loop();                 // update the controls based on the current readings
 }
 
