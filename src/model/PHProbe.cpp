@@ -37,8 +37,9 @@ PHProbe::PHProbe() {
   while (!Serial1)
     ;
   // Serial1.print(F("*OK,0\r"));  // Turn off the returning of OK after command to EZO pH
-  // Serial1.print(F("C,1\r"));    // Reset pH stamp to continuous measurement: once per second
-  // sendSlopeRequest();
+  Serial1.print(F("C,1\r"));  // Set probe to measure pH once per second
+  waitingForConfirmation = true;
+  sendSlopeRequest();
 }
 
 /**
@@ -49,8 +50,8 @@ void PHProbe::clearCalibration() {
   state = CALIBRATION;
   slopeIsOutOfRange = false;                          // Clear warnings about current calibration
   EEPROM_TC::instance()->setIgnoreBadPHSlope(false);  // Watch for new bad calibrations
-  Serial1.print(F("Cal,clear\r"));
   calibrationString[0] = '\0';
+  Serial1.print(F("Cal,clear\r"));
   waitingForConfirmation = true;
 }
 
@@ -74,21 +75,21 @@ void PHProbe::getCalibrationStatus(char* buffer, int size) {
   strscpy(buffer, calibrationStatus, size);
 }
 
-void PHProbe::getCalibrationString(char* buffer, int size) {
-  // If calibrationString is not empty, then we assume it is correct. If calibrationString
-  // is empty, we request it from the EZO probe. Any function that causes a change in the
-  // calibration of the EZO probe should erase calibrationString.
-  if (strnlen(calibrationString, sizeof(calibrationString)) == 0 && !receivingCalibrationString) {
-    Serial1.print(F("C,0\r"));  // Tell EZO probe to stop sending pH measurements
-    this->requestCalibrationString();
-  }
-  // Send the calibration string only if it is complete
-  if (receivingCalibrationString) {
-    strscpy_P(buffer, F("Requesting..."), size);
-  } else {
-    strscpy(buffer, calibrationString, size);
-  }
-}
+// void PHProbe::getCalibrationString(char* buffer, int size) {
+//   // If calibrationString is not empty, then we assume it is correct. If calibrationString
+//   // is empty, we request it from the EZO probe. Any function that causes a change in the
+//   // calibration of the EZO probe should erase calibrationString.
+//   if (strnlen(calibrationString, sizeof(calibrationString)) == 0 && !receivingCalibrationString) {
+//     Serial1.print(F("C,0\r"));  // Tell EZO probe to stop sending pH measurements
+//     this->requestCalibrationString();
+//   }
+//   // Send the calibration string only if it is complete
+//   if (receivingCalibrationString) {
+//     strscpy_P(buffer, F("Requesting..."), size);
+//   } else {
+//     strscpy(buffer, calibrationString, size);
+//   }
+// }
 
 /**
  * @brief Ask the EZO probe for its slope
@@ -110,14 +111,14 @@ void PHProbe::getSlope(char* buffer, int size) {
   strscpy(buffer, slopeResponse, size);
 }
 
-/**
- * @brief Ask the EZO probe to export its calibration string
- *
- */
-void PHProbe::requestCalibrationString() {
-  receivingCalibrationString = true;
-  Serial1.print(F("EXPORT\r"));
-}
+// /**
+//  * @brief Ask the EZO probe to export its calibration string
+//  *
+//  */
+// void PHProbe::requestCalibrationString() {
+//   receivingCalibrationString = true;
+//   Serial1.print(F("EXPORT\r"));
+// }
 
 /**
  * interrupt handler for data arriving from probe
@@ -198,8 +199,8 @@ void PHProbe::setTemperatureCompensation(float temperature) {
 }
 
 void PHProbe::setHighpointCalibration(float highpoint) {
-  slopeIsOutOfRange = false;
-  EEPROM_TC::instance()->setIgnoreBadPHSlope(false);
+  slopeIsOutOfRange = false;                          // Clear warnings about current calibration
+  EEPROM_TC::instance()->setIgnoreBadPHSlope(false);  // Watch for new bad calibrations
   char buffer[17];
   snprintf_P(buffer, sizeof(buffer), (PGM_P)F("Cal,High,%i.%03i\r"), (int)highpoint,
              (int)(highpoint * 1000 + 0.5) % 1000);
@@ -209,8 +210,8 @@ void PHProbe::setHighpointCalibration(float highpoint) {
 }
 
 void PHProbe::setLowpointCalibration(float lowpoint) {
-  slopeIsOutOfRange = false;
-  EEPROM_TC::instance()->setIgnoreBadPHSlope(false);
+  slopeIsOutOfRange = false;                          // Clear warnings about current calibration
+  EEPROM_TC::instance()->setIgnoreBadPHSlope(false);  // Watch for new bad calibrations
   char buffer[16];
   snprintf_P(buffer, sizeof(buffer), (PGM_P)F("Cal,low,%i.%03i\r"), (int)lowpoint, (int)(lowpoint * 1000 + 0.5) % 1000);
   Serial1.print(buffer);  // send that string to the Atlas Scientific product
@@ -219,8 +220,8 @@ void PHProbe::setLowpointCalibration(float lowpoint) {
 }
 
 void PHProbe::setMidpointCalibration(float midpoint) {
-  slopeIsOutOfRange = false;
-  EEPROM_TC::instance()->setIgnoreBadPHSlope(false);
+  slopeIsOutOfRange = false;                          // Clear warnings about current calibration
+  EEPROM_TC::instance()->setIgnoreBadPHSlope(false);  // Watch for new bad calibrations
   char buffer[16];
   snprintf_P(buffer, sizeof(buffer), (PGM_P)F("Cal,mid,%i.%03i\r"), (int)midpoint, (int)(midpoint * 1000 + 0.5) % 1000);
   Serial1.print(buffer);  // send that string to the Atlas Scientific product

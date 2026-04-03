@@ -14,13 +14,13 @@
  */
 
 enum pHProbeState {
-  BOOT,                 // booting (continuous read disabled)
-  CONTINUOUS_READ,      // reporting pH values every second
-  CALIBRATION,          // being calibrated (continuous read disabled)
-  EXPORT_CALIBRATION,   // exporting its calibration (continuous read disabled)
-  IMPORT_CALIBRATION,   // importing a calibration (continuous read disabled)
-  SLOPE,                // reporting its slope (continuous read active)
-  THERMAL_COMPENSATION  // importing a temperature (continuous read active)
+  // BOOT,             // booting (continuous read disabled)
+  CONTINUOUS_READ,  // reporting pH values every second
+  CALIBRATION,      // being calibrated (continuous read disabled)
+  // EXPORT_CALIBRATION,   // exporting its calibration (continuous read disabled)
+  // IMPORT_CALIBRATION,   // importing a calibration (continuous read disabled)
+  // SLOPE,  // reporting its slope (continuous read active)
+  // THERMAL_COMPENSATION  // importing a temperature (continuous read active)
 };
 
 class PHProbe {
@@ -89,8 +89,8 @@ private:
   bool receivingCalibrationString = false;
   char slopeResponse[32] = "";
   bool slopeIsOutOfRange = false;
-  pHProbeState state = BOOT;
-  bool continuousReadActive = false;
+  pHProbeState state = CONTINUOUS_READ;
+  bool waitingForConfirmation = false;
   // Methods
   PHProbe();
   void requestCalibrationString();
